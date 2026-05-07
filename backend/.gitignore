@@ -1,42 +1,15 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
-node_modules/
-
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
+node_modules
+# Keep environment variables out of version control
 .env
-
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
-
-# generated native folders
-/ios
-/android
+.env.local
+# Keep build artifacts out of version control
+dist/
+build/
+coverage/
+# Keep IDE configuration files out of version control
+.vscode/
+.idea/
+# Keep lock files for development dependency management (optional, but common)
+package-lock.json
+# Keep generated Prisma client out of version control
+/generated/prisma

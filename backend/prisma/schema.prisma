@@ -1,0 +1,225 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  RESIDENT
+  ADMIN
+  DRIVER
+}
+
+enum WasteCategory {
+  WET
+  DRY
+  RECYCLABLE
+  SANITARY
+  EWASTE
+  HAZARDOUS
+}
+
+enum SegregationStatus {
+  CORRECT
+  PARTIAL
+  NOT_SEGREGATED
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+enum RouteStatus {
+  DRAFT
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum StopStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+  DELAYED
+}
+
+model User {
+  id               String          @id @default(cuid())
+  fullName         String
+  mobile           String?         @unique
+  email            String?         @unique
+  passwordHash     String?
+  role             UserRole        @default(RESIDENT)
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  residentProfile  ResidentProfile?
+  adminProfile     AdminProfile?
+  driverProfile    DriverProfile?
+  wasteLogs        WasteLog[]
+  complaints       Complaint[]
+  notifications    Notification[]
+}
+
+model ResidentProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zoneId       String?
+  zone         Zone?    @relation(fields: [zoneId], references: [id])
+  buildingName String?
+  block        String?
+  street       String?
+  landmark     String?
+  houseNumber  String?
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AdminProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model DriverProfile {
+  id        String       @id @default(cuid())
+  userId    String       @unique
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleId String?
+  vehicle   Vehicle?     @relation(fields: [vehicleId], references: [id])
+  routePlans RoutePlan[]
+  createdAt DateTime     @default(now())
+}
+
+model Zone {
+  id               String            @id @default(cuid())
+  zoneName         String
+  city             String
+  areaCode         String?
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  residents        ResidentProfile[]
+  pickupSchedules  PickupSchedule[]
+  wasteLogs        WasteLog[]
+  complaints       Complaint[]
+  routePlans       RoutePlan[]
+  sensorReadings   SensorReading[]
+}
+
+model PickupSchedule {
+  id                String        @id @default(cuid())
+  zoneId            String
+  zone              Zone          @relation(fields: [zoneId], references: [id])
+  wasteCategory     WasteCategory
+  pickupDay         Int           // 0=Sun, 1=Mon, ..., 6=Sat
+  pickupTimeWindow  String        // e.g. "08:00-10:00"
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  complaints        Complaint[]
+}
+
+model WasteLog {
+  id                String            @id @default(cuid())
+  userId            String
+  user              User              @relation(fields: [userId], references: [id])
+  zoneId            String
+  zone              Zone              @relation(fields: [zoneId], references: [id])
+  wasteCategories   WasteCategory[]
+  segregationStatus SegregationStatus
+  readyForPickup    Boolean           @default(true)
+  quantityEstimate  String?
+  createdAt         DateTime          @default(now())
+}
+
+model Complaint {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id])
+  zoneId           String
+  zone             Zone            @relation(fields: [zoneId], references: [id])
+  relatedScheduleId String?
+  relatedSchedule  PickupSchedule? @relation(fields: [relatedScheduleId], references: [id])
+  imageUrl         String?
+  note             String?
+  status           ComplaintStatus @default(OPEN)
+  createdAt        DateTime        @default(now())
+  resolvedAt       DateTime?
+  updatedAt        DateTime        @updatedAt
+}
+
+model Vehicle {
+  id             String          @id @default(cuid())
+  vehicleNumber  String          @unique
+  capacityUnits  Int             @default(100)
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+
+  drivers        DriverProfile[]
+  routePlans     RoutePlan[]
+}
+
+model RoutePlan {
+  id                   String        @id @default(cuid())
+  zoneId               String
+  zone                 Zone          @relation(fields: [zoneId], references: [id])
+  vehicleId            String?
+  vehicle              Vehicle?      @relation(fields: [vehicleId], references: [id])
+  driverProfileId      String?
+  driverProfile        DriverProfile? @relation(fields: [driverProfileId], references: [id])
+  routeDate            DateTime
+  totalEstimatedStops  Int           @default(0)
+  totalPriorityScore   Int           @default(0)
+  status               RouteStatus   @default(DRAFT)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  routeStops           RouteStop[]
+}
+
+model RouteStop {
+  id              String      @id @default(cuid())
+  routePlanId     String
+  routePlan       RoutePlan   @relation(fields: [routePlanId], references: [id], onDelete: Cascade)
+  residentProfileId String
+  stopOrder       Int
+  priorityScore   Int         @default(0)
+  stopStatus      StopStatus  @default(PENDING)
+  issueNote       String?
+  completedAt     DateTime?
+  createdAt       DateTime    @default(now())
+}
+
+model SensorReading {
+  id           String   @id @default(cuid())
+  binId        String
+  zoneId       String
+  zone         Zone     @relation(fields: [zoneId], references: [id])
+  fillLevel    Float    // 0-100 percent
+  batteryStatus Float?
+  recordedAt   DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
