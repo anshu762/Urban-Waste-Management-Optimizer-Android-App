@@ -1,0 +1,6 @@
+import { apiClient } from '../config/api.config';
+
+export const updateProfileApi = async (data: any) => {
+  const response = await apiClient.put('/me/profile', data);
+  return response.data;
+};
