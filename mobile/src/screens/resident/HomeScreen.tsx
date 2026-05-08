@@ -28,6 +28,9 @@ export const HomeScreen = ({ navigation }: any) => {
           <View>
             <Text className="text-gray-500 text-sm">Welcome back,</Text>
             <Text className="text-2xl font-bold text-gray-900">{user?.fullName}</Text>
+            <TouchableOpacity onPress={() => useAuthStore.getState().logout()}>
+              <Text className="text-red-500 text-xs font-bold mt-1">Logout</Text>
+            </TouchableOpacity>
           </View>
           <TouchableOpacity 
             onPress={() => navigation.navigate('Notifications')}

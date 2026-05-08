@@ -33,12 +33,15 @@ export const RootNavigator = () => {
   }
 
   // Role based navigation
+  console.log('Current User Role:', user.role); // Debugging line
+  
   switch (user.role) {
     case 'ADMIN':
       return <AdminStack />;
     case 'DRIVER':
       return <DriverStack />;
     case 'RESIDENT':
+      return <ResidentStack />;
     default:
       return <ResidentStack />;
   }

@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getZonesApi } from '../../api/zone.api';
-// Assuming deleteZone api exists or I should add it
+import { useAuthStore } from '../../stores/auth.store';
 import { apiClient } from '../../config/api.config';
 
 export const ZoneManagementScreen = ({ navigation }: any) => {
@@ -15,7 +15,7 @@ export const ZoneManagementScreen = ({ navigation }: any) => {
   });
 
   const deleteZoneMutation = useMutation({
-    mutationFn: (id: string) => apiClient.delete(`/admin/zones/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/zones/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['zones'] });
     },
@@ -58,13 +58,42 @@ export const ZoneManagementScreen = ({ navigation }: any) => {
     </TouchableOpacity>
   );
 
+  const [isModalVisible, setIsModalVisible] = React.useState(false);
+  const [zoneName, setZoneName] = React.useState('');
+  const [city, setCity] = React.useState('');
+  const [areaCode, setAreaCode] = React.useState('');
+
+  const createZoneMutation = useMutation({
+    mutationFn: (data: any) => apiClient.post('/zones', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['zones'] });
+      setIsModalVisible(false);
+      setZoneName('');
+      setCity('');
+      setAreaCode('');
+    },
+  });
+
+  const handleCreateZone = () => {
+    if (!zoneName || !city) {
+        Alert.alert('Error', 'Please fill Zone Name and City');
+        return;
+    }
+    createZoneMutation.mutate({ zoneName, city, areaCode });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <View className="px-4 py-4 flex-row justify-between items-center">
-        <Text className="text-2xl font-bold text-gray-900">Zones</Text>
+        <View>
+          <Text className="text-2xl font-bold text-gray-900">Zones</Text>
+          <TouchableOpacity onPress={() => useAuthStore.getState().logout()}>
+            <Text className="text-red-500 text-xs font-bold">Logout</Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity 
           className="bg-primary px-4 py-2 rounded-full"
-          onPress={() => {/* Open Create Zone Sheet/Screen */}}
+          onPress={() => setIsModalVisible(true)}
         >
           <Text className="text-white font-bold">+ New Zone</Text>
         </TouchableOpacity>
@@ -87,6 +116,57 @@ export const ZoneManagementScreen = ({ navigation }: any) => {
           }
         />
       )}
+
+      {/* Create Zone Modal */}
+      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white rounded-t-3xl p-6">
+            <Text className="text-xl font-bold mb-6">Create New Zone</Text>
+            
+            <Text className="text-gray-700 font-medium mb-2">Zone Name</Text>
+            <TextInput
+              className="bg-gray-50 p-3 rounded-xl border border-gray-200 mb-4"
+              value={zoneName}
+              onChangeText={setZoneName}
+              placeholder="e.g. Sector 15"
+            />
+
+            <Text className="text-gray-700 font-medium mb-2">City</Text>
+            <TextInput
+              className="bg-gray-50 p-3 rounded-xl border border-gray-200 mb-4"
+              value={city}
+              onChangeText={setCity}
+              placeholder="e.g. New Delhi"
+            />
+
+            <Text className="text-gray-700 font-medium mb-2">Area Code (Optional)</Text>
+            <TextInput
+              className="bg-gray-50 p-3 rounded-xl border border-gray-200 mb-6"
+              value={areaCode}
+              onChangeText={setAreaCode}
+              placeholder="e.g. 110001"
+            />
+
+            <View className="flex-row mb-6">
+              <TouchableOpacity 
+                onPress={() => setIsModalVisible(false)}
+                className="flex-1 py-4 items-center"
+              >
+                <Text className="text-gray-500 font-bold">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={handleCreateZone}
+                disabled={createZoneMutation.isPending}
+                className="flex-1 bg-primary py-4 rounded-xl items-center"
+              >
+                <Text className="text-white font-bold">
+                    {createZoneMutation.isPending ? 'Creating...' : 'Create Zone'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
