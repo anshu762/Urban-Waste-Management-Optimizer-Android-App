@@ -7,6 +7,13 @@ export interface User {
   email: string | null;
   mobile: string | null;
   role: 'RESIDENT' | 'ADMIN' | 'DRIVER';
+  residentProfile?: {
+    id: string;
+    zoneId: string | null;
+    buildingName: string | null;
+    block: string | null;
+    street: string | null;
+  };
 }
 
 interface AuthState {
@@ -31,7 +38,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuth: async (user, token) => {
     await AsyncStorage.setItem('auth_token', token);
     await AsyncStorage.setItem('auth_user', JSON.stringify(user));
-    set({ user, token, isAuthenticated: true });
+    
+    // Check if user already has a profile with a zoneId
+    const isDone = !!(user.residentProfile?.zoneId);
+    if (isDone) {
+      await AsyncStorage.setItem('onboardingComplete', 'true');
+    }
+    
+    set({ user, token, isAuthenticated: true, onboardingComplete: isDone });
   },
 
   logout: async () => {

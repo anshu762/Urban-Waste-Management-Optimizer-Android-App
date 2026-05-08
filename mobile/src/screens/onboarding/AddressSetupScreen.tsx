@@ -57,8 +57,7 @@ export const AddressSetupScreen = ({ navigation }: any) => {
       await useAuthStore.getState().completeOnboarding();
       AppToast.showSuccess('Success', 'Address updated successfully');
       
-      // The RootNavigator should react to this state change or we can manually navigate
-      navigation.replace('ResidentHome'); // Assuming ResidentHome is the next screen
+      // The RootNavigator will automatically react to the state change and switch to ResidentStack
     } catch (error) {
       AppToast.showError('Submission Failed', 'Could not update profile');
     } finally {

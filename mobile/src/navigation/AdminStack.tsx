@@ -4,14 +4,12 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 const Stack = createNativeStackNavigator();
 
-const AdminHome = () => (
-  <View className="flex-1 justify-center items-center bg-white">
-    <Text className="text-xl font-bold text-red-500">Admin Dashboard</Text>
-  </View>
-);
+import { ZoneManagementScreen } from '../screens/admin/ZoneManagementScreen';
+import { ZoneDetailScreen } from '../screens/admin/ZoneDetailScreen';
 
 export const AdminStack = () => (
-  <Stack.Navigator>
-    <Stack.Screen name="AdminHome" component={AdminHome} options={{ title: 'Admin Home' }} />
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="ZoneManagement" component={ZoneManagementScreen} />
+    <Stack.Screen name="ZoneDetail" component={ZoneDetailScreen} />
   </Stack.Navigator>
 );
