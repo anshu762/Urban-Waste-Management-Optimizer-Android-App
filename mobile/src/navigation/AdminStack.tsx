@@ -8,12 +8,20 @@ import { ZoneManagementScreen } from '../screens/admin/ZoneManagementScreen';
 import { ZoneDetailScreen } from '../screens/admin/ZoneDetailScreen';
 import { ComplaintsScreen } from '../screens/admin/ComplaintsScreen';
 import { AdminComplaintDetailScreen } from '../screens/admin/AdminComplaintDetailScreen';
+import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
+import VehicleManagementScreen from '../screens/admin/VehicleManagementScreen';
+import RouteManagementScreen from '../screens/admin/RouteManagementScreen';
+import RouteDetailScreen from '../screens/admin/RouteDetailScreen';
 
 export const AdminStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: true }}>
-    <Stack.Screen name="ZoneManagement" component={ZoneManagementScreen} options={{ title: 'Zone Management' }} />
-    <Stack.Screen name="ZoneDetail" component={ZoneDetailScreen} options={{ title: 'Zone Details' }} />
-    <Stack.Screen name="Complaints" component={ComplaintsScreen} options={{ title: 'Missed Pickups' }} />
-    <Stack.Screen name="AdminComplaintDetail" component={AdminComplaintDetailScreen} options={{ title: 'Complaint Details' }} />
+  <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="AdminDashboard">
+    <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
+    <Stack.Screen name="ZoneManagement" component={ZoneManagementScreen} />
+    <Stack.Screen name="ZoneDetail" component={ZoneDetailScreen} />
+    <Stack.Screen name="Complaints" component={ComplaintsScreen} />
+    <Stack.Screen name="AdminComplaintDetail" component={AdminComplaintDetailScreen} />
+    <Stack.Screen name="VehicleManagement" component={VehicleManagementScreen} />
+    <Stack.Screen name="RouteManagement" component={RouteManagementScreen} />
+    <Stack.Screen name="RouteDetail" component={RouteDetailScreen} />
   </Stack.Navigator>
 );
