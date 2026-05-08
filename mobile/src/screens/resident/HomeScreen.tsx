@@ -96,7 +96,7 @@ export const HomeScreen = ({ navigation }: any) => {
             <View className="flex-1 mr-2">
               <AppButton 
                 title="Log Waste Ready" 
-                onPress={() => {}} 
+                onPress={() => navigation.navigate('LogWaste')} 
                 variant="primary"
                 className="h-12"
               />
@@ -104,11 +104,19 @@ export const HomeScreen = ({ navigation }: any) => {
             <View className="flex-1 ml-2">
               <AppButton 
                 title="Report Missed" 
-                onPress={() => {}} 
+                onPress={() => navigation.navigate('ReportMissedPickup')} 
                 variant="secondary"
                 className="h-12 border-red-500"
               />
             </View>
+          </View>
+          <View className="mt-4">
+            <AppButton 
+              title="My Reports" 
+              onPress={() => navigation.navigate('MyReports')} 
+              variant="outline"
+              className="h-12"
+            />
           </View>
         </View>
       </ScrollView>

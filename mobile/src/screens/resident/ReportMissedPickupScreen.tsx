@@ -6,15 +6,24 @@ import Toast from 'react-native-toast-message';
 import { AppButton } from '../../components/common/AppButton';
 import { useSubmitComplaint } from '../../hooks/useComplaints';
 
-// In a real app, you would fetch these from an API
-const DUMMY_SCHEDULES = [
-  { id: '1', label: 'WET - Monday 8:00 AM' },
-  { id: '2', label: 'DRY - Tuesday 9:00 AM' },
-];
+import { useAuthStore } from '../../stores/auth.store';
+import { useQuery } from '@tanstack/react-query';
+import { getSchedulesByZone } from '../../api/schedule.api';
 
 export const ReportMissedPickupScreen = () => {
   const navigation = useNavigation();
   const submitComplaintMutation = useSubmitComplaint();
+
+  const user = useAuthStore((state) => state.user);
+  const zoneId = user?.residentProfile?.zoneId;
+
+  const { data: schedulesResponse, isLoading } = useQuery({
+    queryKey: ['zoneSchedules', zoneId],
+    queryFn: () => getSchedulesByZone(zoneId!),
+    enabled: !!zoneId,
+  });
+
+  const schedules = schedulesResponse?.data || [];
 
   const [note, setNote] = useState('');
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
@@ -78,19 +87,25 @@ export const ReportMissedPickupScreen = () => {
       <View className="mb-6">
         <Text className="text-base font-semibold text-gray-800 mb-2">Related Schedule (Optional)</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-          {DUMMY_SCHEDULES.map(schedule => (
-            <TouchableOpacity
-              key={schedule.id}
-              onPress={() => setSelectedScheduleId(schedule.id === selectedScheduleId ? null : schedule.id)}
-              className={`px-4 py-2 rounded-full m-1 border ${
-                selectedScheduleId === schedule.id ? 'bg-green-500 border-green-500' : 'bg-white border-gray-300'
-              }`}
-            >
-              <Text className={`${selectedScheduleId === schedule.id ? 'text-white' : 'text-gray-700'}`}>
-                {schedule.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#22c55e" className="m-2" />
+          ) : schedules.length === 0 ? (
+            <Text className="text-gray-500 my-2">No active schedules found.</Text>
+          ) : (
+            schedules.map((schedule: any) => (
+              <TouchableOpacity
+                key={schedule.id}
+                onPress={() => setSelectedScheduleId(schedule.id === selectedScheduleId ? null : schedule.id)}
+                className={`px-4 py-2 rounded-full m-1 border ${
+                  selectedScheduleId === schedule.id ? 'bg-green-500 border-green-500' : 'bg-white border-gray-300'
+                }`}
+              >
+                <Text className={`${selectedScheduleId === schedule.id ? 'text-white' : 'text-gray-700'}`}>
+                  {schedule.wasteCategory} - Day {schedule.pickupDay} ({schedule.pickupTimeWindow})
+                </Text>
+              </TouchableOpacity>
+            ))
+          )}
         </ScrollView>
       </View>
 

@@ -86,17 +86,29 @@ export const ZoneManagementScreen = ({ navigation }: any) => {
     <SafeAreaView className="flex-1 bg-gray-50">
       <View className="px-4 py-4 flex-row justify-between items-center">
         <View>
-          <Text className="text-2xl font-bold text-gray-900">Zones</Text>
+          <Text className="text-2xl font-bold text-gray-900">Admin Panel</Text>
           <TouchableOpacity onPress={() => useAuthStore.getState().logout()}>
             <Text className="text-red-500 text-xs font-bold">Logout</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity 
-          className="bg-primary px-4 py-2 rounded-full"
-          onPress={() => setIsModalVisible(true)}
-        >
-          <Text className="text-white font-bold">+ New Zone</Text>
-        </TouchableOpacity>
+        <View className="flex-row">
+          <TouchableOpacity 
+            className="bg-orange-500 px-4 py-2 rounded-full mr-2"
+            onPress={() => navigation.navigate('Complaints')}
+          >
+            <Text className="text-white font-bold">Complaints</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            className="bg-primary px-4 py-2 rounded-full"
+            onPress={() => setIsModalVisible(true)}
+          >
+            <Text className="text-white font-bold">+ Zone</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View className="px-4 mb-4">
+        <Text className="text-lg font-bold text-gray-800">Managed Zones</Text>
       </View>
 
       {isLoading ? (
