@@ -18,6 +18,21 @@ export class UserService {
 
     return updated;
   }
+
+  async listDrivers() {
+    return prisma.driverProfile.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          }
+        },
+        vehicle: true,
+      }
+    });
+  }
 }
 
 export const userService = new UserService();

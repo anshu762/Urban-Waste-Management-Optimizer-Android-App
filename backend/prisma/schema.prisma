@@ -83,6 +83,8 @@ model ResidentProfile {
   longitude    Float?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  routeStops   RouteStop[]
 }
 
 model AdminProfile {
@@ -196,6 +198,7 @@ model RouteStop {
   routePlanId     String
   routePlan       RoutePlan   @relation(fields: [routePlanId], references: [id], onDelete: Cascade)
   residentProfileId String
+  residentProfile   ResidentProfile @relation(fields: [residentProfileId], references: [id])
   stopOrder       Int
   priorityScore   Int         @default(0)
   stopStatus      StopStatus  @default(PENDING)

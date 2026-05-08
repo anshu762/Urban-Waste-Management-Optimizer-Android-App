@@ -11,6 +11,7 @@ import { AppButton } from '../../components/common/AppButton';
 export const HomeScreen = ({ navigation }: any) => {
   const user = useAuthStore((state) => state.user);
   const zoneId = user?.residentProfile?.zoneId;
+  const zoneName = user?.residentProfile?.zone?.zoneName || (zoneId ? 'Zone Set ✓' : 'No Zone Set');
 
   const { data: pickups, isLoading } = useQuery({
     queryKey: ['upcomingPickups', zoneId],
@@ -32,12 +33,20 @@ export const HomeScreen = ({ navigation }: any) => {
               <Text className="text-red-500 text-xs font-bold mt-1">Logout</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('Notifications')}
-            className="bg-white p-2 rounded-full shadow-sm"
-          >
-            <Text className="text-xl">🔔</Text>
-          </TouchableOpacity>
+          <View className="items-end">
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('Notifications')}
+              className="bg-white p-2 rounded-full shadow-sm mb-2"
+            >
+              <Text className="text-xl">🔔</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('AddressSetup')}
+              className="bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full"
+            >
+              <Text className="text-emerald-700 text-xs font-bold">📍 {zoneId ? 'Change Zone' : 'Set Zone!'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Next Pickup Section */}

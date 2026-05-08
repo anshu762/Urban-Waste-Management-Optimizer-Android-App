@@ -1,21 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useMyComplaints } from '../../hooks/useComplaints';
+import { useMyWasteLogs } from '../../hooks/useWasteLog';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { format } from 'date-fns';
 
+const CATEGORY_EMOJI: Record<string, string> = {
+  WET: '🟢', DRY: '🟡', RECYCLABLE: '♻️', SANITARY: '🩺', EWASTE: '💻', HAZARDOUS: '☣️',
+};
+
 export const MyReportsScreen = () => {
   const navigation = useNavigation<any>();
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useMyComplaints();
+  const [activeTab, setActiveTab] = useState<'logs' | 'complaints'>('logs');
 
-  const handlePress = (complaint: any) => {
-    navigation.navigate('ComplaintDetail', { complaintId: complaint.id, complaint });
-  };
+  const { data: complaintsData, isLoading: complaintsLoading, fetchNextPage: fetchMoreComplaints, hasNextPage: hasMoreComplaints } = useMyComplaints();
+  const { data: logsData, isLoading: logsLoading, fetchNextPage: fetchMoreLogs, hasNextPage: hasMoreLogs } = useMyWasteLogs();
 
-  const renderItem = ({ item }: { item: any }) => (
+  const complaints = complaintsData?.pages.flatMap((page) => page.data.data) || [];
+  const wasteLogs = logsData?.pages.flatMap((page: any) => page.data?.data || page.data || []) || [];
+
+  const isLoading = activeTab === 'logs' ? logsLoading : complaintsLoading;
+
+  const renderWasteLog = ({ item }: { item: any }) => (
+    <View className="bg-white p-4 rounded-xl shadow-sm mb-3 border border-gray-100">
+      <View className="flex-row justify-between items-center mb-2">
+        <View className="bg-emerald-100 px-3 py-1 rounded-full">
+          <Text className="text-emerald-700 text-xs font-bold">♻️ WASTE LOG</Text>
+        </View>
+        <Text className="text-gray-400 text-xs">
+          {format(new Date(item.createdAt), 'MMM dd, yyyy')}
+        </Text>
+      </View>
+      <View className="flex-row flex-wrap mb-2">
+        {(item.wasteCategories || []).map((cat: string) => (
+          <View key={cat} className="bg-gray-100 px-2 py-1 rounded-full mr-1 mb-1">
+            <Text className="text-xs text-gray-700">{CATEGORY_EMOJI[cat] || '🗑️'} {cat}</Text>
+          </View>
+        ))}
+      </View>
+      <View className="flex-row items-center">
+        <Text className="text-xs text-gray-500">
+          {item.segregationStatus?.replace('_', ' ')} • {item.quantityEstimate || 'Qty not specified'}
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderComplaint = ({ item }: { item: any }) => (
     <TouchableOpacity
-      onPress={() => handlePress(item)}
+      onPress={() => navigation.navigate('ComplaintDetail', { complaintId: item.id, complaint: item })}
       className="bg-white p-4 rounded-xl shadow-sm mb-3 border border-gray-100 flex-row justify-between items-center"
     >
       <View className="flex-1 pr-4">
@@ -33,46 +67,66 @@ export const MyReportsScreen = () => {
     </TouchableOpacity>
   );
 
-  if (isLoading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <ActivityIndicator size="large" color="#22c55e" />
-      </View>
-    );
-  }
-
-  if (isError) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <Text className="text-red-500">Failed to load reports.</Text>
-      </View>
-    );
-  }
-
-  const complaints = data?.pages.flatMap((page) => page.data.data) || [];
-
   return (
     <View className="flex-1 bg-gray-50">
-      <FlatList
-        data={complaints}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ padding: 16 }}
-        ListEmptyComponent={
-          <View className="flex-1 justify-center items-center py-10">
-            <Text className="text-gray-500">No reports found.</Text>
-          </View>
-        }
-        onEndReached={() => {
-          if (hasNextPage) fetchNextPage();
-        }}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          isFetchingNextPage ? (
-            <ActivityIndicator size="small" color="#22c55e" className="my-4" />
-          ) : null
-        }
-      />
+      {/* Tabs */}
+      <View className="flex-row bg-white border-b border-gray-100 px-4 pt-2">
+        <TouchableOpacity
+          onPress={() => setActiveTab('logs')}
+          className={`mr-6 pb-3 border-b-2 ${
+            activeTab === 'logs' ? 'border-emerald-500' : 'border-transparent'
+          }`}
+        >
+          <Text className={`font-bold ${
+            activeTab === 'logs' ? 'text-emerald-600' : 'text-gray-400'
+          }`}>Waste Logs</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setActiveTab('complaints')}
+          className={`pb-3 border-b-2 ${
+            activeTab === 'complaints' ? 'border-emerald-500' : 'border-transparent'
+          }`}
+        >
+          <Text className={`font-bold ${
+            activeTab === 'complaints' ? 'text-emerald-600' : 'text-gray-400'
+          }`}>Complaints</Text>
+        </TouchableOpacity>
+      </View>
+
+      {isLoading ? (
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#22c55e" />
+        </View>
+      ) : activeTab === 'logs' ? (
+        <FlatList
+          data={wasteLogs}
+          keyExtractor={(item) => item.id}
+          renderItem={renderWasteLog}
+          contentContainerStyle={{ padding: 16 }}
+          ListEmptyComponent={
+            <View className="flex-1 justify-center items-center py-10">
+              <Text className="text-gray-500">No waste logs found.</Text>
+              <Text className="text-gray-400 text-xs mt-1">Tap 'Log Waste Ready' on the home screen to add one.</Text>
+            </View>
+          }
+          onEndReached={() => { if (hasMoreLogs) fetchMoreLogs(); }}
+          onEndReachedThreshold={0.5}
+        />
+      ) : (
+        <FlatList
+          data={complaints}
+          keyExtractor={(item) => item.id}
+          renderItem={renderComplaint}
+          contentContainerStyle={{ padding: 16 }}
+          ListEmptyComponent={
+            <View className="flex-1 justify-center items-center py-10">
+              <Text className="text-gray-500">No complaints found.</Text>
+            </View>
+          }
+          onEndReached={() => { if (hasMoreComplaints) fetchMoreComplaints(); }}
+          onEndReachedThreshold={0.5}
+        />
+      )}
     </View>
   );
 };
