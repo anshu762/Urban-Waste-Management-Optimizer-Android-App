@@ -51,14 +51,28 @@ export const AddressSetupScreen = ({ navigation }: any) => {
         houseNumber,
         landmark,
       };
-      await updateProfileApi(payload);
+      const res = await updateProfileApi(payload);
       
-      // Mark onboarding as complete
-      await useAuthStore.getState().completeOnboarding();
-      AppToast.showSuccess('Success', 'Address updated successfully');
+      if (res.success) {
+        // Update user data in store with the new profile info
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser) {
+           const updatedUser = { 
+             ...currentUser, 
+             residentProfile: res.data 
+           };
+           // We need to re-set auth to update the local storage and state
+           const token = useAuthStore.getState().token;
+           if (token) {
+             await useAuthStore.getState().setAuth(updatedUser, token);
+           }
+        }
+        
+        await useAuthStore.getState().completeOnboarding();
+        AppToast.showSuccess('Success', 'Address updated successfully');
+      }
       
-      // The RootNavigator should react to this state change or we can manually navigate
-      navigation.replace('ResidentHome'); // Assuming ResidentHome is the next screen
+      // The RootNavigator will automatically react to the state change and switch to ResidentStack
     } catch (error) {
       AppToast.showError('Submission Failed', 'Could not update profile');
     } finally {

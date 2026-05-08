@@ -23,22 +23,25 @@ export const RootNavigator = () => {
   }
 
   // If resident and hasn't completed address setup
-  if (user.role === 'RESIDENT' && !onboardingComplete) {
+  const isProfileComplete = !!(user.residentProfile?.zoneId);
+  if (user.role === 'RESIDENT' && !onboardingComplete && !isProfileComplete) {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="AddressSetup" component={AddressSetupScreen} />
-        <Stack.Screen name="ResidentHome" component={ResidentStack} />
       </Stack.Navigator>
     );
   }
 
   // Role based navigation
+  console.log('Current User Role:', user.role); // Debugging line
+  
   switch (user.role) {
     case 'ADMIN':
       return <AdminStack />;
     case 'DRIVER':
       return <DriverStack />;
     case 'RESIDENT':
+      return <ResidentStack />;
     default:
       return <ResidentStack />;
   }

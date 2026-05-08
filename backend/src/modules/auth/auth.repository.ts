@@ -1,21 +1,39 @@
 import { prisma } from '../../lib/prisma';
 import { User, Prisma } from '@prisma/client';
 
+const includeProfiles = {
+  residentProfile: true,
+  adminProfile: true,
+  driverProfile: true,
+};
+
 export class AuthRepository {
-  async findUserByEmail(email: string): Promise<User | null> {
-    return prisma.user.findUnique({ where: { email } });
+  async findUserByEmail(email: string) {
+    return prisma.user.findUnique({ 
+      where: { email },
+      include: includeProfiles
+    });
   }
 
-  async findUserByMobile(mobile: string): Promise<User | null> {
-    return prisma.user.findUnique({ where: { mobile } });
+  async findUserByMobile(mobile: string) {
+    return prisma.user.findUnique({ 
+      where: { mobile },
+      include: includeProfiles
+    });
   }
 
-  async findUserById(id: string): Promise<User | null> {
-    return prisma.user.findUnique({ where: { id } });
+  async findUserById(id: string) {
+    return prisma.user.findUnique({ 
+      where: { id },
+      include: includeProfiles
+    });
   }
 
-  async createUser(data: Prisma.UserCreateInput): Promise<User> {
-    return prisma.user.create({ data });
+  async createUser(data: Prisma.UserCreateInput) {
+    return prisma.user.create({ 
+      data,
+      include: includeProfiles
+    });
   }
 }
 
