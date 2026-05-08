@@ -7,61 +7,64 @@ import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 const CHART_WIDTH = width - 48;
-const CHART_HEIGHT = 180;
+const CHART_HEIGHT = 200;
+const CHART_TOP_PADDING = 30;
 
 // --- Inline Bar Chart (no reanimated needed) ---
 const BarChart = ({ data }: { data: { date: string; count: number }[] }) => {
-  if (!data || data.length === 0) {
+  const allZero = !data || data.length === 0 || data.every(d => d.count === 0);
+
+  if (allZero) {
     return (
       <View style={{ height: CHART_HEIGHT, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: '#9CA3AF' }}>No data available</Text>
+        <Text style={{ color: '#9CA3AF', fontSize: 13 }}>No waste logs in the last 7 days</Text>
+        <Text style={{ color: '#D1D5DB', fontSize: 11, marginTop: 4 }}>Residents need to submit logs first</Text>
       </View>
     );
   }
 
   const maxCount = Math.max(...data.map(d => d.count), 1);
   const barWidth = (CHART_WIDTH - 40) / data.length - 8;
-  const chartInnerHeight = CHART_HEIGHT - 30;
+  const chartInnerHeight = CHART_HEIGHT - 40; // More space for labels/dates
 
   return (
     <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
       {data.map((item, index) => {
-        const barHeight = (item.count / maxCount) * chartInnerHeight;
+        const barHeight = (item.count / maxCount) * (chartInnerHeight - CHART_TOP_PADDING);
         const x = 20 + index * (barWidth + 8);
         const y = chartInnerHeight - barHeight;
+
         return (
-          <G key={item.date}>
+          <React.Fragment key={index}>
+            {/* Exact Count Text above bar - Larger & Clearer */}
+            <SvgText
+              x={x + barWidth / 2}
+              y={y - 8}
+              fontSize="12"
+              fontWeight="900"
+              fill={item.count > 0 ? '#064E3B' : '#9CA3AF'} // Darker emerald for contrast
+              textAnchor="middle"
+            >
+              {item.count}
+            </SvgText>
             <Rect
               x={x}
               y={y}
               width={barWidth}
               height={barHeight}
-              rx={4}
-              fill="#00A36C"
-              opacity={0.85}
+              fill={item.count > 0 ? '#10B981' : '#F3F4F6'}
+              rx={6}
             />
             <SvgText
               x={x + barWidth / 2}
-              y={CHART_HEIGHT - 4}
-              fontSize={9}
-              fill="#6B7280"
+              y={CHART_HEIGHT - 5}
+              fontSize="8"
+              fill="#9CA3AF"
               textAnchor="middle"
             >
               {item.date}
             </SvgText>
-            {item.count > 0 && (
-              <SvgText
-                x={x + barWidth / 2}
-                y={y - 4}
-                fontSize={9}
-                fill="#374151"
-                textAnchor="middle"
-                fontWeight="bold"
-              >
-                {item.count}
-              </SvgText>
-            )}
-          </G>
+          </React.Fragment>
         );
       })}
     </Svg>
@@ -184,12 +187,17 @@ const AdminDashboardScreen = ({ navigation }: any) => {
     pickupsDueToday: 0,
   };
 
-  const chartData = (weeklyData?.data || []).map((item: any) => ({
-    date: item.date.split('-').slice(1).join('/'),
-    count: item.count,
-  }));
+  // Backend returns { success: true, data: [...] }
+  const rawWeekly = weeklyData?.data ?? [];
+  const rawCategory = categoryData?.data ?? [];
 
-  const pieData = (categoryData?.data || []);
+  // Logic to show exactly the last 7 days ending TODAY
+  const chartData = rawWeekly.map((item: any) => ({
+    date: item.date ? item.date.split('-').slice(1).join('/') : '',
+    count: item.count || 0,
+  })).slice(-7); // Keep only the latest 7 days including today
+
+  const pieData = rawCategory;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>

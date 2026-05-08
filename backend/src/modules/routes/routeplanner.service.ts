@@ -20,6 +20,14 @@ export class RoutePlannerService {
       throw new Error('No ready households found for this zone to generate a route.');
     }
 
+    // Find ALL existing route plans for this zone+date and delete every one of them.
+    // Using findMany+deleteMany ensures no stale duplicates survive between Optimize calls.
+    const existingPlans = await this.routeRepository.findAllRoutePlansByZoneAndDate(zoneId, date);
+    if (existingPlans.length > 0) {
+      const ids = existingPlans.map((p: { id: string }) => p.id);
+      await this.routeRepository.deleteRoutePlansWithStops(ids);
+    }
+
     // Sort by priorityScore (DESC), then by block (ASC), then by street (ASC)
     households.sort((a, b) => {
       if (b.priorityScore !== a.priorityScore) {

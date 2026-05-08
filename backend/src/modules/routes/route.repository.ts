@@ -7,20 +7,20 @@ export class RouteRepository {
    * Fetches households in a zone ready for pickup based on recent waste logs and open complaints.
    */
   async getReadyHouseholdsByZone(zoneId: string, date: Date) {
-    const startOfYesterday = new Date(date);
-    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
-    startOfYesterday.setHours(0, 0, 0, 0);
+    // Window: today only (midnight to end of day)
+    const startOfToday = new Date(date);
+    startOfToday.setHours(0, 0, 0, 0);
 
     const endOfToday = new Date(date);
     endOfToday.setHours(23, 59, 59, 999);
 
-    // 1. Find users with active waste logs
+    // 1. Find users with active waste logs LOGGED TODAY
     const recentLogs = await prisma.wasteLog.findMany({
       where: {
         zoneId,
         readyForPickup: true,
         createdAt: {
-          gte: startOfYesterday,
+          gte: startOfToday,
           lte: endOfToday,
         },
       },
@@ -103,6 +103,36 @@ export class RouteRepository {
     return Array.from(householdMap.values());
   }
 
+  /**
+   * Returns ALL route plans for a given zone on a given date.
+   * Used to check for duplicates before generating a new plan.
+   */
+  async findAllRoutePlansByZoneAndDate(zoneId: string, date: Date) {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return prisma.routePlan.findMany({
+      where: {
+        zoneId,
+        routeDate: { gte: startOfDay, lte: endOfDay },
+      },
+      select: { id: true },
+    });
+  }
+
+  /**
+   * Atomically deletes a batch of route plans and ALL their stops.
+   * Accepts an array of route plan IDs to handle multiple duplicates.
+   */
+  async deleteRoutePlansWithStops(routePlanIds: string[]) {
+    if (routePlanIds.length === 0) return;
+    // Delete stops first (FK constraint), then the plans
+    await prisma.routeStop.deleteMany({ where: { routePlanId: { in: routePlanIds } } });
+    await prisma.routePlan.deleteMany({ where: { id: { in: routePlanIds } } });
+  }
+
   async createRoutePlan(data: {
     zoneId: string;
     routeDate: Date;
@@ -133,6 +163,15 @@ export class RouteRepository {
       include: {
         routeStops: {
           orderBy: { stopOrder: 'asc' },
+          include: {
+            residentProfile: {
+              include: {
+                user: {
+                  select: { fullName: true }
+                }
+              }
+            }
+          }
         },
         vehicle: true,
         driverProfile: {
@@ -163,6 +202,17 @@ export class RouteRepository {
         driverProfile: {
           include: { user: true }
         },
+        routeStops: {
+          take: 1,
+          orderBy: { stopOrder: 'asc' },
+          include: {
+            residentProfile: {
+              include: {
+                user: { select: { fullName: true } }
+              }
+            }
+          }
+        }
       },
       orderBy: { routeDate: 'desc' },
     });

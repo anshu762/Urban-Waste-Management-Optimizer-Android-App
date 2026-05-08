@@ -55,8 +55,26 @@ export const AdminComplaintDetailScreen = () => {
 
         <Text className="text-xs text-gray-500 mb-1">Date Submitted</Text>
         <Text className="text-base text-gray-900">
-          {format(new Date(complaint.createdAt), 'MMMM dd, yyyy - hh:mm a')}
+          {format(new Date(complaint.createdAt), 'MMM dd, yyyy - hh:mm a')}
         </Text>
+
+        {complaint.resolvedAt && (
+          <>
+            <Text className="text-xs text-gray-500 mb-1 mt-3">✅ Date Resolved</Text>
+            <Text className="text-base text-emerald-700 font-semibold">
+              {format(new Date(complaint.resolvedAt), 'MMM dd, yyyy - hh:mm a')}
+            </Text>
+          </>
+        )}
+
+        {!complaint.resolvedAt && complaint.updatedAt && complaint.updatedAt !== complaint.createdAt && (
+          <>
+            <Text className="text-xs text-gray-500 mb-1 mt-3">🔄 Last Updated</Text>
+            <Text className="text-base text-blue-600">
+              {format(new Date(complaint.updatedAt), 'MMM dd, yyyy - hh:mm a')}
+            </Text>
+          </>
+        )}
       </View>
 
       <View className="mb-6">

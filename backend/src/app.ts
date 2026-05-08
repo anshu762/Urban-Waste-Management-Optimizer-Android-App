@@ -18,6 +18,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Admin / Phase 4 routes (More specific routes first)
+app.use('/api/v1/admin/dashboard', authenticate, authorize('ADMIN'), dashboardRoutes);
+app.use('/api/v1/admin/vehicles', authenticate, authorize('ADMIN'), vehicleRoutes);
+app.use('/api/v1/admin/routes', authenticate, authorize('ADMIN', 'DRIVER'), routePlanRoutes);
+
+// General routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1', userRoutes);
 app.use('/api/v1/zones', zoneRoutes);
@@ -25,11 +31,6 @@ app.use('/api/v1/schedules', scheduleRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/waste-logs', wastelogRoutes);
 app.use('/api/v1/complaints', complaintRoutes);
-
-// Admin / Phase 4 routes
-app.use('/api/v1/admin/dashboard', authenticate, authorize('ADMIN'), dashboardRoutes);
-app.use('/api/v1/admin/vehicles', authenticate, authorize('ADMIN'), vehicleRoutes);
-app.use('/api/v1/admin/routes', authenticate, authorize('ADMIN', 'DRIVER'), routePlanRoutes);
 
 app.use(errorHandler);
 

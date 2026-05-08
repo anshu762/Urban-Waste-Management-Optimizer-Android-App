@@ -17,3 +17,12 @@ export const updateProfile = async (req: Request, res: Response) => {
     errorResponse(res, error.message, 500);
   }
 };
+
+export const getDrivers = async (req: Request, res: Response) => {
+  try {
+    const result = await userService.listDrivers();
+    successResponse(res, result, 'Drivers fetched successfully');
+  } catch (error: any) {
+    errorResponse(res, error.message, 500);
+  }
+};

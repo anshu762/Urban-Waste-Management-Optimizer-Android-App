@@ -123,14 +123,21 @@ export class DashboardRepository {
    * Get the last 7 days log counts grouped by date
    */
   async getWeeklyLogVolume(zoneId?: string) {
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - 7);
+    // IST Adjustment: If server is UTC, add 5.5 hours to get India time
+    const nowIST = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000));
+    
+    const today = new Date(nowIST);
+    today.setHours(23, 59, 59, 999);
+    
+    const weekStart = new Date(nowIST);
+    weekStart.setDate(nowIST.getDate() - 6);
     weekStart.setHours(0, 0, 0, 0);
 
     const logs = await prisma.wasteLog.findMany({
       where: {
         createdAt: {
           gte: weekStart,
+          lte: today,
         },
         ...(zoneId ? { zoneId } : {}),
       },
@@ -141,20 +148,32 @@ export class DashboardRepository {
 
     // Group by date string (YYYY-MM-DD)
     const volumeByDate: Record<string, number> = {};
+    
+    // Manual date formatter to stay in "IST-shifted" time
+    const formatDate = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    // Initialize exactly 7 days ending today (shifted to IST)
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart);
-      d.setDate(d.getDate() + i);
-      volumeByDate[d.toISOString().split('T')[0]] = 0;
+      d.setDate(weekStart.getDate() + i);
+      volumeByDate[formatDate(d)] = 0;
     }
 
     logs.forEach(log => {
-      const dateStr = log.createdAt.toISOString().split('T')[0];
+      // Adjust log creation time to IST for grouping
+      const logIST = new Date(log.createdAt.getTime() + (5.5 * 60 * 60 * 1000));
+      const dateStr = formatDate(logIST);
       if (volumeByDate[dateStr] !== undefined) {
         volumeByDate[dateStr]++;
       }
     });
 
-    return Object.keys(volumeByDate).map(date => ({
+    return Object.keys(volumeByDate).sort().map(date => ({
       date,
       count: volumeByDate[date],
     }));
