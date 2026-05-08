@@ -4,7 +4,7 @@ import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 interface AppButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'outline';
   isLoading?: boolean;
   disabled?: boolean;
   className?: string;
@@ -24,12 +24,14 @@ export const AppButton: React.FC<AppButtonProps> = ({
     primary: 'bg-primary',
     secondary: 'bg-secondary',
     danger: 'bg-danger',
+    outline: 'bg-transparent border-2 border-gray-300',
   };
 
   const textClasses = {
     primary: 'text-white font-bold',
     secondary: 'text-white font-bold',
     danger: 'text-white font-bold',
+    outline: 'text-gray-700 font-bold',
   };
 
   return (
