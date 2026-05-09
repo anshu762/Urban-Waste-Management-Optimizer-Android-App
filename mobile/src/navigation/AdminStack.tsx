@@ -37,8 +37,8 @@ const AdminTabs = () => (
 );
 
 export const AdminStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="AdminDashboard">
-    <Stack.Screen name="AdminDashboard" component={AdminTabs} />
+  <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="AdminRoot">
+    <Stack.Screen name="AdminRoot" component={AdminTabs} />
     <Stack.Screen name="ZoneDetail" component={ZoneDetailScreen} />
     <Stack.Screen name="AdminComplaintDetail" component={AdminComplaintDetailScreen} />
     <Stack.Screen name="VehicleManagement" component={VehicleManagementScreen} />
