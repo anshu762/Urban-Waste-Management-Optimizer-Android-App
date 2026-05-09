@@ -11,6 +11,7 @@ import complaintRoutes from './modules/complaints/complaint.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import vehicleRoutes from './modules/vehicles/vehicle.routes';
 import routePlanRoutes from './modules/routes/route.routes';
+import iotRoutes from './modules/iot/iot.routes';
 import { authenticate, authorize } from './middleware/auth.middleware';
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api/v1/schedules', scheduleRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/waste-logs', wastelogRoutes);
 app.use('/api/v1/complaints', complaintRoutes);
+app.use('/api/v1', iotRoutes);
 
 app.use(errorHandler);
 

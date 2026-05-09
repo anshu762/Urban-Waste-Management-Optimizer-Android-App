@@ -33,6 +33,17 @@ export class UserService {
       }
     });
   }
+
+  async updatePushToken(userId: string, pushToken: string | null) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { pushToken },
+      select: {
+        id: true,
+        pushToken: true,
+      },
+    });
+  }
 }
 
 export const userService = new UserService();

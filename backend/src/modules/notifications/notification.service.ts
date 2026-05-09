@@ -1,29 +1,48 @@
-import cron from 'node-cron';
-import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { notificationRepository } from './notification.repository';
 import { prisma } from '../../lib/prisma';
-
-const expo = new Expo();
+import { sendExpoPushNotification } from '../../lib/expo-push';
 
 export class NotificationService {
-  /**
-   * Schedules a cron job to run every day at 8:00 PM
-   */
+  private reminderTimer?: NodeJS.Timeout;
+
   initCronJobs() {
-    // 0 20 * * * = 8:00 PM every day
-    cron.schedule('0 20 * * *', async () => {
-      console.log('Running daily pickup reminders cron job...');
-      await this.schedulePickupReminders();
-    });
+    this.schedulePickupReminders();
   }
 
-  async schedulePickupReminders() {
-    try {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowDay = tomorrow.getDay(); // 0-6
+  schedulePickupReminders() {
+    if (this.reminderTimer) {
+      clearTimeout(this.reminderTimer);
+    }
 
-      // 1. Find all active schedules for tomorrow
+    const runDailyReminder = async () => {
+      try {
+        await this.sendPickupRemindersForTomorrow();
+      } catch (error) {
+        console.error('Pickup reminder job failed:', error);
+      } finally {
+        this.reminderTimer = setTimeout(runDailyReminder, this.msUntilNext8Pm());
+      }
+    };
+
+    this.reminderTimer = setTimeout(runDailyReminder, this.msUntilNext8Pm());
+  }
+
+  private msUntilNext8Pm() {
+    const now = new Date();
+    const nextRun = new Date(now);
+    nextRun.setHours(20, 0, 0, 0);
+    if (nextRun <= now) {
+      nextRun.setDate(nextRun.getDate() + 1);
+    }
+    return nextRun.getTime() - now.getTime();
+  }
+
+  private async sendPickupRemindersForTomorrow() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDay = tomorrow.getDay();
+
+    try {
       const schedules = await prisma.pickupSchedule.findMany({
         where: {
           pickupDay: tomorrowDay,
@@ -35,58 +54,90 @@ export class NotificationService {
       });
 
       for (const schedule of schedules) {
-        // 2. Find all residents in that zone
-        const residents = await prisma.residentProfile.findMany({
-          where: { zoneId: schedule.zoneId },
-          include: { user: true },
-        });
-
-        for (const resident of residents) {
-          const title = 'Pickup Tomorrow';
-          const body = `Tomorrow is your ${schedule.wasteCategory} waste pickup day during ${schedule.pickupTimeWindow}. Please keep your bins ready!`;
-
-          // 3. Create Notification record in DB
-          await notificationRepository.createNotification({
-            userId: resident.userId,
-            title,
-            body,
-          });
-
-          // 4. Send Push Notification (Mocked if no token, but logically implemented)
-          // Note: In a real app, you'd store expoPushToken on the User/ResidentProfile
-          // For now, I'll implement the logic to call sendPushNotification if a token exists
-          // (Assuming a field might exist or be added later, but I'll stick to DB records mainly as requested)
-          console.log(`Notification created for user ${resident.userId}`);
-        }
+        await this.notifyResidentsInZone(
+          schedule.zoneId,
+          'Pickup Tomorrow',
+          `Tomorrow is your ${schedule.wasteCategory} waste pickup day during ${schedule.pickupTimeWindow}. Please keep your bins ready!`
+        );
       }
     } catch (error) {
       console.error('Error in schedulePickupReminders:', error);
     }
   }
 
-  async sendPushNotification(expoPushToken: string, title: string, body: string) {
-    if (!Expo.isExpoPushToken(expoPushToken)) {
-      console.error(`Push token ${expoPushToken} is not a valid Expo push token`);
-      return;
-    }
-
-    const messages: ExpoPushMessage[] = [
-      {
-        to: expoPushToken,
-        sound: 'default',
-        title,
-        body,
-        data: { withSome: 'data' },
-      },
-    ];
-
+  async notifyResidentsInZone(zoneId: string, title: string, body: string, data?: object) {
     try {
-      const chunks = expo.chunkPushNotifications(messages);
-      for (const chunk of chunks) {
-        await expo.sendPushNotificationsAsync(chunk);
+      const residents = await prisma.residentProfile.findMany({
+        where: { zoneId },
+        include: { user: true },
+      });
+
+      await notificationRepository.createManyNotifications(
+        residents.map((resident) => ({
+          userId: resident.userId,
+          title,
+          body,
+        }))
+      );
+
+      const tokens = residents.map((resident) => resident.user.pushToken).filter((token): token is string => Boolean(token));
+      await sendExpoPushNotification(tokens, title, body, data);
+    } catch (error) {
+      console.error('Failed to notify residents in zone:', error);
+    }
+  }
+
+  async notifyUser(userId: string, title: string, body: string, data?: object) {
+    try {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) return;
+
+      await notificationRepository.createNotification({ userId, title, body });
+      if (user.pushToken) {
+        await sendExpoPushNotification([user.pushToken], title, body, data);
       }
     } catch (error) {
-      console.error('Error sending push notification:', error);
+      console.error('Failed to notify user:', error);
+    }
+  }
+
+  async notifyAdminNewComplaint(complaint: { id: string; zone?: { zoneName: string } | null; zoneId?: string }) {
+    try {
+      const admins = await prisma.user.findMany({
+        where: { role: 'ADMIN', isActive: true },
+      });
+      const zoneName = complaint.zone?.zoneName || 'Unknown zone';
+      const title = 'New Missed Pickup Report';
+      const body = `New missed pickup report in ${zoneName}`;
+
+      await notificationRepository.createManyNotifications(
+        admins.map((admin) => ({ userId: admin.id, title, body }))
+      );
+      await sendExpoPushNotification(
+        admins.map((admin) => admin.pushToken).filter((token): token is string => Boolean(token)),
+        title,
+        body,
+        { complaintId: complaint.id, zoneId: complaint.zoneId }
+      );
+    } catch (error) {
+      console.error('Failed to notify admins about complaint:', error);
+    }
+  }
+
+  async notifyAdmins(title: string, body: string, data?: object) {
+    try {
+      const admins = await prisma.user.findMany({ where: { role: 'ADMIN', isActive: true } });
+      await notificationRepository.createManyNotifications(
+        admins.map((admin) => ({ userId: admin.id, title, body }))
+      );
+      await sendExpoPushNotification(
+        admins.map((admin) => admin.pushToken).filter((token): token is string => Boolean(token)),
+        title,
+        body,
+        data
+      );
+    } catch (error) {
+      console.error('Failed to notify admins:', error);
     }
   }
 

@@ -3,6 +3,7 @@ import { SubmitComplaintDto, UpdateComplaintStatusDto } from './complaint.schema
 import { prisma } from '../../lib/prisma';
 import { uploadImage } from '../../lib/cloudinary';
 import { ComplaintStatus } from '@prisma/client';
+import { notificationService } from '../notifications/notification.service';
 
 export class ComplaintService {
   static async submitComplaint(userId: string, dto: SubmitComplaintDto, imageFile?: Express.Multer.File) {
@@ -20,13 +21,16 @@ export class ComplaintService {
       imageUrl = uploadResult.url;
     }
 
-    return ComplaintRepository.createComplaint({
+    const complaint = await ComplaintRepository.createComplaint({
       userId,
       zoneId: resident.zoneId,
       note: dto.note,
       relatedScheduleId: dto.relatedScheduleId,
       imageUrl,
     });
+
+    await notificationService.notifyAdminNewComplaint(complaint);
+    return complaint;
   }
 
   static async getMyComplaints(userId: string, page: number = 1, limit: number = 10) {

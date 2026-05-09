@@ -1,4 +1,5 @@
 import { RouteRepository } from './route.repository';
+import { notificationService } from '../notifications/notification.service';
 
 export class RoutePlannerService {
   private routeRepository: RouteRepository;
@@ -78,7 +79,19 @@ export class RoutePlannerService {
   }
 
   async assignRoute(routePlanId: string, driverProfileId: string, vehicleId: string) {
-    return this.routeRepository.assignRouteToDriver(routePlanId, driverProfileId, vehicleId);
+    const updatedPlan = await this.routeRepository.assignRouteToDriver(routePlanId, driverProfileId, vehicleId);
+
+    const driverUserId = updatedPlan.driverProfile?.userId;
+    if (driverUserId) {
+      await notificationService.notifyUser(
+        driverUserId,
+        'New Route Assigned',
+        `You have a route for ${updatedPlan.zone.zoneName} on ${updatedPlan.routeDate.toDateString()}`,
+        { routePlanId: updatedPlan.id, zoneId: updatedPlan.zoneId }
+      );
+    }
+
+    return updatedPlan;
   }
 
   // Used by drivers

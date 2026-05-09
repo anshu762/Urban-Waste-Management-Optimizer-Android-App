@@ -244,6 +244,11 @@ export class RouteRepository {
         vehicleId,
         status: RouteStatus.ASSIGNED,
       },
+      include: {
+        zone: true,
+        driverProfile: true,
+        vehicle: true,
+      },
     });
   }
 }

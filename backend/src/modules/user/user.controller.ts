@@ -26,3 +26,19 @@ export const getDrivers = async (req: Request, res: Response) => {
     errorResponse(res, error.message, 500);
   }
 };
+
+export const updatePushToken = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const { pushToken } = req.body;
+
+    if (pushToken !== null && typeof pushToken !== 'string') {
+      return errorResponse(res, 'pushToken must be a string or null', 400);
+    }
+
+    const result = await userService.updatePushToken(userId, pushToken);
+    successResponse(res, result, 'Push token updated successfully');
+  } catch (error: any) {
+    errorResponse(res, error.message, 500);
+  }
+};
