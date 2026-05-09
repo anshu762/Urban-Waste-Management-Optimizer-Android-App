@@ -5,6 +5,8 @@ import { useMyComplaints } from '../../hooks/useComplaints';
 import { useMyWasteLogs } from '../../hooks/useWasteLog';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { format } from 'date-fns';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
 
 const CATEGORY_EMOJI: Record<string, string> = {
   WET: '🟢', DRY: '🟡', RECYCLABLE: '♻️', SANITARY: '🩺', EWASTE: '💻', HAZARDOUS: '☣️',
@@ -14,13 +16,15 @@ export const MyReportsScreen = () => {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<'logs' | 'complaints'>('logs');
 
-  const { data: complaintsData, isLoading: complaintsLoading, fetchNextPage: fetchMoreComplaints, hasNextPage: hasMoreComplaints } = useMyComplaints();
-  const { data: logsData, isLoading: logsLoading, fetchNextPage: fetchMoreLogs, hasNextPage: hasMoreLogs } = useMyWasteLogs();
+  const { data: complaintsData, isLoading: complaintsLoading, isError: complaintsError, refetch: refetchComplaints, fetchNextPage: fetchMoreComplaints, hasNextPage: hasMoreComplaints } = useMyComplaints();
+  const { data: logsData, isLoading: logsLoading, isError: logsError, refetch: refetchLogs, fetchNextPage: fetchMoreLogs, hasNextPage: hasMoreLogs } = useMyWasteLogs();
 
   const complaints = complaintsData?.pages.flatMap((page) => page.data.data) || [];
   const wasteLogs = logsData?.pages.flatMap((page: any) => page.data?.data || page.data || []) || [];
 
   const isLoading = activeTab === 'logs' ? logsLoading : complaintsLoading;
+  const isError = activeTab === 'logs' ? logsError : complaintsError;
+  const refetch = activeTab === 'logs' ? refetchLogs : refetchComplaints;
 
   const renderWasteLog = ({ item }: { item: any }) => (
     <View className="bg-white p-4 rounded-xl shadow-sm mb-3 border border-gray-100">
@@ -97,6 +101,8 @@ export const MyReportsScreen = () => {
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#22c55e" />
         </View>
+      ) : isError ? (
+        <ErrorState message="Something went wrong" onRetry={() => refetch()} />
       ) : activeTab === 'logs' ? (
         <FlatList
           data={wasteLogs}
@@ -104,10 +110,7 @@ export const MyReportsScreen = () => {
           renderItem={renderWasteLog}
           contentContainerStyle={{ padding: 16 }}
           ListEmptyComponent={
-            <View className="flex-1 justify-center items-center py-10">
-              <Text className="text-gray-500">No waste logs found.</Text>
-              <Text className="text-gray-400 text-xs mt-1">Tap 'Log Waste Ready' on the home screen to add one.</Text>
-            </View>
+            <EmptyState emoji="✅" title="No reports yet" subtitle="Report a missed pickup if collection did not happen." />
           }
           onEndReached={() => { if (hasMoreLogs) fetchMoreLogs(); }}
           onEndReachedThreshold={0.5}
@@ -119,9 +122,7 @@ export const MyReportsScreen = () => {
           renderItem={renderComplaint}
           contentContainerStyle={{ padding: 16 }}
           ListEmptyComponent={
-            <View className="flex-1 justify-center items-center py-10">
-              <Text className="text-gray-500">No complaints found.</Text>
-            </View>
+            <EmptyState emoji="✅" title="No complaints yet" subtitle="Report a missed pickup if collection did not happen." />
           }
           onEndReached={() => { if (hasMoreComplaints) fetchMoreComplaints(); }}
           onEndReachedThreshold={0.5}

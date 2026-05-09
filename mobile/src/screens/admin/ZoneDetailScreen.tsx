@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, FlatList } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSchedulesByZone, createSchedule, deleteSchedule } from '../../api/schedule.api';
 import CategoryBadge from '../../components/common/CategoryBadge';
 import { AppButton } from '../../components/common/AppButton';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
 
 export const ZoneDetailScreen = ({ route, navigation }: any) => {
   const { zoneId, zoneName } = route.params;
@@ -16,7 +18,7 @@ export const ZoneDetailScreen = ({ route, navigation }: any) => {
   const [pickupDay, setPickupDay] = useState(1);
   const [timeWindow, setTimeWindow] = useState('08:00 AM - 10:00 AM');
 
-  const { data: schedules, isLoading } = useQuery({
+  const { data: schedules, isLoading, isError, refetch } = useQuery({
     queryKey: ['schedules', zoneId],
     queryFn: () => getSchedulesByZone(zoneId),
   });
@@ -69,7 +71,11 @@ export const ZoneDetailScreen = ({ route, navigation }: any) => {
         </View>
 
         {isLoading ? (
-          <Text>Loading...</Text>
+          <View className="py-16 items-center">
+            <ActivityIndicator size="large" color="#10b981" />
+          </View>
+        ) : isError ? (
+          <ErrorState message="Something went wrong" onRetry={refetch} />
         ) : (
           <FlatList
             data={schedules?.data}
@@ -87,9 +93,7 @@ export const ZoneDetailScreen = ({ route, navigation }: any) => {
               </View>
             )}
             ListEmptyComponent={
-              <View className="py-10 items-center">
-                <Text className="text-gray-400">No schedules set for this zone.</Text>
-              </View>
+              <EmptyState emoji="📅" title="No schedules set" subtitle="Add a pickup schedule for this zone." />
             }
           />
         )}

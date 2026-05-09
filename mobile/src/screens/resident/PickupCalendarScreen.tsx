@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../stores/auth.store';
@@ -17,13 +17,15 @@ import {
   subMonths 
 } from 'date-fns';
 import CategoryBadge from '../../components/common/CategoryBadge';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
 
 export const PickupCalendarScreen = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const user = useAuthStore((state) => state.user);
   const zoneId = user?.residentProfile?.zoneId;
 
-  const { data: pickups } = useQuery({
+  const { data: pickups, isLoading, isError, refetch } = useQuery({
     queryKey: ['upcomingPickups', zoneId],
     queryFn: () => getUpcomingPickups(zoneId!),
     enabled: !!zoneId,
@@ -116,7 +118,13 @@ export const PickupCalendarScreen = () => {
       </View>
 
       <ScrollView className="flex-1 bg-gray-50 p-4">
-        {selectedDate ? (
+        {isLoading ? (
+          <View className="py-16 items-center">
+            <ActivityIndicator size="large" color="#10b981" />
+          </View>
+        ) : isError ? (
+          <ErrorState message="Something went wrong" onRetry={refetch} />
+        ) : selectedDate ? (
           <View>
             <Text className="text-lg font-bold text-gray-900 mb-4">
               Pickups for {format(selectedDate, 'MMMM do')}
@@ -132,15 +140,11 @@ export const PickupCalendarScreen = () => {
                 </View>
               ))
             ) : (
-              <View className="bg-white p-6 rounded-xl items-center">
-                <Text className="text-gray-400">No pickups scheduled for this day.</Text>
-              </View>
+              <EmptyState emoji="📅" title="No pickups scheduled" subtitle="There are no pickups for this day." />
             )}
           </View>
         ) : (
-          <View className="items-center justify-center py-10">
-            <Text className="text-gray-400">Select a date to view pickup details</Text>
-          </View>
+          <EmptyState emoji="📅" title="Select a date" subtitle="Pickup details for your area will appear here." />
         )}
       </ScrollView>
     </SafeAreaView>

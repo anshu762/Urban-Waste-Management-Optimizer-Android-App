@@ -9,6 +9,7 @@ import { useSubmitComplaint } from '../../hooks/useComplaints';
 import { useAuthStore } from '../../stores/auth.store';
 import { useQuery } from '@tanstack/react-query';
 import { getSchedulesByZone } from '../../api/schedule.api';
+import { ErrorState } from '../../components/common/ErrorState';
 
 export const ReportMissedPickupScreen = () => {
   const navigation = useNavigation();
@@ -17,7 +18,7 @@ export const ReportMissedPickupScreen = () => {
   const user = useAuthStore((state) => state.user);
   const zoneId = user?.residentProfile?.zoneId;
 
-  const { data: schedulesResponse, isLoading } = useQuery({
+  const { data: schedulesResponse, isLoading, isError, refetch } = useQuery({
     queryKey: ['zoneSchedules', zoneId],
     queryFn: () => getSchedulesByZone(zoneId!),
     enabled: !!zoneId,
@@ -89,6 +90,8 @@ export const ReportMissedPickupScreen = () => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
           {isLoading ? (
             <ActivityIndicator size="small" color="#22c55e" className="m-2" />
+          ) : isError ? (
+            <ErrorState message="Something went wrong" onRetry={refetch} />
           ) : schedules.length === 0 ? (
             <Text className="text-gray-500 my-2">No active schedules found.</Text>
           ) : (

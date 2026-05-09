@@ -1,15 +1,17 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getZonesApi } from '../../api/zone.api';
 import { useAuthStore } from '../../stores/auth.store';
 import { apiClient } from '../../config/api.config';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
 
 export const ZoneManagementScreen = ({ navigation }: any) => {
   const queryClient = useQueryClient();
 
-  const { data: zones, isLoading } = useQuery({
+  const { data: zones, isLoading, isError, refetch } = useQuery({
     queryKey: ['zones'],
     queryFn: getZonesApi,
   });
@@ -113,8 +115,10 @@ export const ZoneManagementScreen = ({ navigation }: any) => {
 
       {isLoading ? (
         <View className="flex-1 justify-center items-center">
-            <Text>Loading zones...</Text>
+            <ActivityIndicator size="large" color="#10b981" />
         </View>
+      ) : isError ? (
+        <ErrorState message="Something went wrong" onRetry={refetch} />
       ) : (
         <FlatList
           data={zones?.data}
@@ -122,9 +126,7 @@ export const ZoneManagementScreen = ({ navigation }: any) => {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: 20 }}
           ListEmptyComponent={
-            <View className="py-20 items-center">
-              <Text className="text-gray-400">No zones found.</Text>
-            </View>
+            <EmptyState emoji="📍" title="No zones found" subtitle="Create your first service zone to start scheduling pickups." />
           }
         />
       )}

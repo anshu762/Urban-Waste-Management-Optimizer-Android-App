@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Dimensions, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDashboardStats, useWeeklyLogVolume, useCategoryBreakdown } from '../../hooks/useDashboard';
 import Svg, { Rect, Text as SvgText, G, Circle, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { exportDashboardCsvApi } from '../../api/dashboard.api';
+import { ErrorState } from '../../components/common/ErrorState';
+import { LoadingSkeleton } from '../../components/common/LoadingSkeleton';
 
 const { width } = Dimensions.get('window');
 const CHART_WIDTH = width - 48;
@@ -171,12 +176,35 @@ const StatCard = ({
 // --- Main Screen ---
 const AdminDashboardScreen = ({ navigation }: any) => {
   const [zoneId] = useState<string | undefined>(undefined);
+  const [isExporting, setIsExporting] = useState(false);
 
-  const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useDashboardStats({ zone_id: zoneId });
-  const { data: weeklyData, isLoading: weeklyLoading, refetch: refetchWeekly } = useWeeklyLogVolume(zoneId);
-  const { data: categoryData, isLoading: categoryLoading, refetch: refetchCategory } = useCategoryBreakdown({ zone_id: zoneId });
+  const { data: statsData, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useDashboardStats({ zone_id: zoneId });
+  const { data: weeklyData, isLoading: weeklyLoading, isError: weeklyError, refetch: refetchWeekly } = useWeeklyLogVolume(zoneId);
+  const { data: categoryData, isLoading: categoryLoading, isError: categoryError, refetch: refetchCategory } = useCategoryBreakdown({ zone_id: zoneId });
 
   const onRefresh = () => { refetchStats(); refetchWeekly(); refetchCategory(); };
+  const hasError = statsError || weeklyError || categoryError;
+  const isInitialLoading = statsLoading || weeklyLoading || categoryLoading;
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      const csv = await exportDashboardCsvApi({ zone_id: zoneId });
+      const file = new File(Paths.document, 'dashboard_stats.csv');
+      file.create({ overwrite: true });
+      file.write(csv);
+      const fileUri = file.uri;
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', dialogTitle: 'Export dashboard CSV' });
+      } else {
+        Alert.alert('Export ready', fileUri);
+      }
+    } catch (error) {
+      Alert.alert('Export failed', 'Unable to export dashboard CSV right now.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const stats = statsData?.data || {
     totalHouseholds: 0,
@@ -209,6 +237,14 @@ const AdminDashboardScreen = ({ navigation }: any) => {
         </View>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <TouchableOpacity
+            style={{ backgroundColor: '#111827', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
+            onPress={handleExport}
+            disabled={isExporting}
+          >
+            <Ionicons name="download" size={15} color="white" />
+            <Text style={{ color: '#fff', fontWeight: 'bold', marginLeft: 4, fontSize: 12 }}>{isExporting ? 'Exporting' : 'CSV'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={{ backgroundColor: '#00A36C', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
             onPress={() => navigation.navigate('RouteManagement')}
           >
@@ -229,6 +265,16 @@ const AdminDashboardScreen = ({ navigation }: any) => {
         style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}
         refreshControl={<RefreshControl refreshing={statsLoading || weeklyLoading || categoryLoading} onRefresh={onRefresh} tintColor="#00A36C" />}
       >
+        {isInitialLoading ? (
+          <View style={{ gap: 12, marginBottom: 16 }}>
+            <ActivityIndicator size="large" color="#00A36C" />
+            <LoadingSkeleton height={84} borderRadius={12} />
+            <LoadingSkeleton height={200} borderRadius={12} />
+          </View>
+        ) : hasError ? (
+          <ErrorState message="Something went wrong" onRetry={onRefresh} />
+        ) : (
+          <>
         {/* Quick Stats Grid */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           <StatCard title="Total Households" value={stats.totalHouseholds} icon="people" color="#3B82F6" />
@@ -275,6 +321,8 @@ const AdminDashboardScreen = ({ navigation }: any) => {
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827', marginBottom: 12 }}>Waste Categories</Text>
           <PieChart data={pieData} />
         </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

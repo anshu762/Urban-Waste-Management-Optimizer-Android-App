@@ -5,12 +5,14 @@ import { useGenerateRoute, useRoutePlans } from '../../hooks/useRoutes';
 import { useZones } from '../../hooks/useZones';
 import { Ionicons } from '@expo/vector-icons';
 import { format, isToday, isYesterday } from 'date-fns';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
 
 const RouteManagementScreen = ({ navigation }: any) => {
-  const { data: zonesData, isLoading: zonesLoading } = useZones();
+  const { data: zonesData, isLoading: zonesLoading, isError: zonesError, refetch: refetchZones } = useZones();
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   
-  const { data: plansData, isLoading: plansLoading, refetch } = useRoutePlans({ 
+  const { data: plansData, isLoading: plansLoading, isError: plansError, refetch } = useRoutePlans({ 
     zoneId: selectedZoneId || '' 
   });
   
@@ -136,6 +138,8 @@ const RouteManagementScreen = ({ navigation }: any) => {
           <Text className="text-xs font-bold text-gray-400 uppercase mb-2">Select Zone</Text>
           {zonesLoading ? (
             <ActivityIndicator size="small" color="#059669" />
+          ) : zonesError ? (
+            <ErrorState message="Something went wrong" onRetry={refetchZones} />
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
               {zonesData?.data?.map((zone: any) => (
@@ -162,6 +166,8 @@ const RouteManagementScreen = ({ navigation }: any) => {
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#059669" />
         </View>
+      ) : plansError ? (
+        <ErrorState message="Something went wrong" onRetry={refetch} />
       ) : (
         <FlatList
           data={plansData?.data || []}
@@ -169,15 +175,11 @@ const RouteManagementScreen = ({ navigation }: any) => {
           renderItem={renderRouteItem}
           contentContainerStyle={{ padding: 16 }}
           ListEmptyComponent={
-            <View className="items-center justify-center py-20">
-              <Ionicons name="map-outline" size={64} color="#D1D5DB" />
-              <Text className="text-gray-400 mt-4 text-center">
-                {selectedZoneId 
-                  ? "No route plans found for this zone.\nTap 'Optimize' to generate one."
-                  : "Please select a zone to see route plans."
-                }
-              </Text>
-            </View>
+            <EmptyState
+              emoji="🗺️"
+              title={selectedZoneId ? 'No route plans found' : 'Select a zone'}
+              subtitle={selectedZoneId ? 'Tap Optimize to generate a collection route.' : 'Choose a zone to see route plans.'}
+            />
           }
         />
       )}

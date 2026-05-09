@@ -3,9 +3,11 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, Modal
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVehicles, useCreateVehicle, useDeleteVehicle } from '../../hooks/useVehicles';
 import { Ionicons } from '@expo/vector-icons';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
 
 const VehicleManagementScreen = () => {
-  const { data: vehiclesData, isLoading, refetch } = useVehicles(true);
+  const { data: vehiclesData, isLoading, isError, refetch } = useVehicles(true);
   const createVehicle = useCreateVehicle();
   const deleteVehicle = useDeleteVehicle();
 
@@ -83,6 +85,8 @@ const VehicleManagementScreen = () => {
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#059669" />
         </View>
+      ) : isError ? (
+        <ErrorState message="Something went wrong" onRetry={refetch} />
       ) : (
         <FlatList
           data={vehiclesData?.data || []}
@@ -90,10 +94,7 @@ const VehicleManagementScreen = () => {
           renderItem={renderVehicleItem}
           contentContainerStyle={{ padding: 16 }}
           ListEmptyComponent={
-            <View className="items-center justify-center py-20">
-              <Ionicons name="car-outline" size={64} color="#D1D5DB" />
-              <Text className="text-gray-400 mt-4">No vehicles in the fleet.</Text>
-            </View>
+            <EmptyState emoji="🚛" title="No vehicles in the fleet" subtitle="Add a collection vehicle to assign routes." />
           }
         />
       )}

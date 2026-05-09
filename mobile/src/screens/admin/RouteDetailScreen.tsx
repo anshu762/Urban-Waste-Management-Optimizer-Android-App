@@ -7,14 +7,16 @@ import { getDriversApi } from '../../api/user.api';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
 
 const RouteDetailScreen = ({ route, navigation }: any) => {
   const { routeId } = route.params;
-  const { data: planData, isLoading, refetch } = useRoutePlanById(routeId);
-  const { data: vehiclesData } = useVehicles();
+  const { data: planData, isLoading, isError, refetch } = useRoutePlanById(routeId);
+  const { data: vehiclesData, isError: vehiclesError, refetch: refetchVehicles } = useVehicles();
   const assignRoute = useAssignRoute();
 
-  const { data: driversData, isLoading: driversLoading } = useQuery({
+  const { data: driversData, isLoading: driversLoading, isError: driversError, refetch: refetchDrivers } = useQuery({
     queryKey: ['drivers'],
     queryFn: getDriversApi,
   });
@@ -29,6 +31,10 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
         <ActivityIndicator size="large" color="#059669" />
       </View>
     );
+  }
+
+  if (isError) {
+    return <ErrorState message="Something went wrong" onRetry={refetch} />;
   }
 
   const plan = planData?.data;
@@ -180,7 +186,7 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
         ))}
 
         {(!plan?.routeStops || plan.routeStops.length === 0) && (
-          <Text className="text-gray-400 text-center py-10">No stops defined for this route.</Text>
+          <EmptyState emoji="🗺️" title="No stops defined" subtitle="Generate a route with ready households to create stops." />
         )}
         <View className="h-10" />
       </ScrollView>
@@ -198,7 +204,9 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text className="text-gray-500 font-bold text-xs uppercase mb-3">1. Select Driver</Text>
-              {driversLoading ? <ActivityIndicator /> : (
+              {driversLoading ? <ActivityIndicator /> : driversError ? (
+                <ErrorState message="Something went wrong" onRetry={refetchDrivers} />
+              ) : (
                 <View className="flex-row flex-wrap mb-6">
                   {drivers.map((d: any) => (
                     <TouchableOpacity
@@ -213,6 +221,7 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
               )}
 
               <Text className="text-gray-500 font-bold text-xs uppercase mb-3">2. Select Vehicle</Text>
+              {vehiclesError ? <ErrorState message="Something went wrong" onRetry={refetchVehicles} /> : null}
               <View className="flex-row flex-wrap mb-8">
                 {vehicles.filter((v: any) => v.isActive).map((v: any) => (
                   <TouchableOpacity

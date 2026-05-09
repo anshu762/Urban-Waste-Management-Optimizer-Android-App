@@ -4,12 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMyNotifications, markAsRead } from '../../api/notification.api';
 import { format, parseISO } from 'date-fns';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
+import { LoadingSkeleton } from '../../components/common/LoadingSkeleton';
 
 export const NotificationsScreen = () => {
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ['notifications', page],
     queryFn: () => getMyNotifications(page),
   });
@@ -50,16 +53,20 @@ export const NotificationsScreen = () => {
       {isLoading && page === 1 ? (
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#10b981" />
+          <View className="mt-6 w-full px-4 gap-y-3">
+            <LoadingSkeleton height={70} borderRadius={12} />
+            <LoadingSkeleton height={70} borderRadius={12} />
+          </View>
         </View>
+      ) : isError ? (
+        <ErrorState message="Something went wrong" onRetry={refetch} />
       ) : (
         <FlatList
           data={notifications}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
-            <View className="py-20 items-center">
-              <Text className="text-gray-400">No notifications yet.</Text>
-            </View>
+            <EmptyState emoji="🔔" title="No notifications yet" subtitle="Pickup reminders and service updates will appear here." />
           }
           onEndReached={() => {
             if (data?.data?.pagination?.totalPages > page) {

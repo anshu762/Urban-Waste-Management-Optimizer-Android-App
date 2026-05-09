@@ -4,6 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 import { useAdminComplaints } from '../../hooks/useComplaints';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { format } from 'date-fns';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
 
 const TABS = [
   { id: 'ALL', label: 'All' },
@@ -17,7 +19,7 @@ export const ComplaintsScreen = () => {
   const [activeTab, setActiveTab] = useState('ALL');
   
   const filters = activeTab === 'ALL' ? {} : { status: activeTab };
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useAdminComplaints(filters);
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useAdminComplaints(filters);
 
   const handlePress = (complaint: any) => {
     navigation.navigate('AdminComplaintDetail', { complaintId: complaint.id, complaint });
@@ -71,9 +73,7 @@ export const ComplaintsScreen = () => {
           <ActivityIndicator size="large" color="#22c55e" />
         </View>
       ) : isError ? (
-        <View className="flex-1 justify-center items-center">
-          <Text className="text-red-500">Failed to load complaints.</Text>
-        </View>
+        <ErrorState message="Something went wrong" onRetry={() => refetch()} />
       ) : (
         <FlatList
           data={data?.pages.flatMap(page => page.data.data) || []}
@@ -81,9 +81,7 @@ export const ComplaintsScreen = () => {
           renderItem={renderItem}
           contentContainerStyle={{ padding: 16 }}
           ListEmptyComponent={
-            <View className="flex-1 justify-center items-center py-10">
-              <Text className="text-gray-500">No complaints found.</Text>
-            </View>
+            <EmptyState emoji="✅" title="No complaints found" subtitle="Missed pickup reports from residents will appear here." />
           }
           onEndReached={() => {
             if (hasNextPage) fetchNextPage();
