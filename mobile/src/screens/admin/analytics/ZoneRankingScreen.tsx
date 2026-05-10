@@ -51,13 +51,7 @@ export const ZoneRankingScreen = () => {
           <Text style={styles.headerTitle}>Zone Leaderboard</Text>
           <Text style={styles.headerSubtitle}>Operational Priority Ranking</Text>
         </View>
-        <TouchableOpacity style={styles.backButton} onPress={() => refetch()} disabled={isFetching}>
-          {isFetching ? (
-            <ActivityIndicator size="small" color="#0F172A" />
-          ) : (
-            <Ionicons name="refresh-outline" size={18} color="#0F172A" />
-          )}
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

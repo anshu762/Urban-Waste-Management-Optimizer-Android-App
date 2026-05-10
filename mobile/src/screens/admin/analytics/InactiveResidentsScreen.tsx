@@ -101,13 +101,7 @@ export const InactiveResidentsScreen = ({ route }: any) => {
           <Ionicons name="arrow-back" size={20} color="#0F172A" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Inactive Residents</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => refetch()} disabled={isFetching}>
-          {isFetching ? (
-            <ActivityIndicator size="small" color="#0F172A" />
-          ) : (
-            <Ionicons name="refresh-outline" size={18} color="#0F172A" />
-          )}
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
 
       <FlatList

@@ -46,13 +46,7 @@ export const DemandForecastScreen = ({ route }: any) => {
           <Ionicons name="arrow-back" size={20} color="#0F172A" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Demand Forecast</Text>
-        <TouchableOpacity style={styles.backButton} onPress={handleRefresh} disabled={isRefreshing}>
-          {isRefreshing ? (
-            <ActivityIndicator size="small" color="#0F172A" />
-          ) : (
-            <Ionicons name="refresh-outline" size={18} color="#0F172A" />
-          )}
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
