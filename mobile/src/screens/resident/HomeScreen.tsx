@@ -8,7 +8,8 @@ import PickupCard from '../../components/resident/PickupCard';
 import CategoryBadge from '../../components/common/CategoryBadge';
 import { AppButton } from '../../components/common/AppButton';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { parseError } from '../../lib/error-parser';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton';
 import { useResidentZoneSensorSummary } from '../../hooks/useIoT';
 
@@ -17,7 +18,7 @@ export const HomeScreen = ({ navigation }: any) => {
   const zoneId = user?.residentProfile?.zoneId;
   const zoneName = user?.residentProfile?.zone?.zoneName || (zoneId ? 'Zone Set ✓' : 'No Zone Set');
 
-  const { data: pickups, isLoading, isError, refetch } = useQuery({
+  const { data: pickups, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['upcomingPickups', zoneId],
     queryFn: () => getUpcomingPickups(zoneId!),
     enabled: !!zoneId,
@@ -70,7 +71,7 @@ export const HomeScreen = ({ navigation }: any) => {
               </View>
             </View>
           ) : isError ? (
-            <ErrorState message="Something went wrong" onRetry={refetch} />
+            <ErrorCard error={parseError(error)} onRetry={refetch} />
           ) : nextPickup ? (
             <PickupCard 
               date={nextPickup.date} 

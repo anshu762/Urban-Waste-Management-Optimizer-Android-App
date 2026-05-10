@@ -5,17 +5,18 @@ import { AppInput } from '../../components/common/AppInput';
 import { AppButton } from '../../components/common/AppButton';
 import { loginApi } from '../../api/auth.api';
 import { useAuthStore } from '../../stores/auth.store';
-import { AppToast } from '../../components/common/AppToast';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 export const LoginScreen = ({ navigation }: any) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const setAuth = useAuthStore((state) => state.setAuth);
+  const { showError, showSuccess } = useErrorHandler();
 
   const handleLogin = async () => {
     if (!identifier || !password) {
-      AppToast.showError('Validation Error', 'Please enter both email/mobile and password');
+      showError('Please enter both email/mobile and password');
       return;
     }
 
@@ -28,12 +29,10 @@ export const LoginScreen = ({ navigation }: any) => {
       const response = await loginApi(payload);
       if (response.success && response.data) {
         setAuth(response.data.user, response.data.token);
-        // Navigation will be handled automatically by RootNavigator based on auth state
-        AppToast.showSuccess('Welcome back!', 'Login successful');
+        showSuccess('Welcome back!', 'Login successful');
       }
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'Failed to login';
-      AppToast.showError('Login Failed', msg);
+      showError(error);
     } finally {
       setIsLoading(false);
     }

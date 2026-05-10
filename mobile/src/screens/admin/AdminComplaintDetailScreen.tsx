@@ -1,16 +1,17 @@
 import React from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import Toast from 'react-native-toast-message';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { format } from 'date-fns';
 import { useUpdateComplaintStatus } from '../../hooks/useComplaints';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 export const AdminComplaintDetailScreen = () => {
   const route = useRoute<any>();
   const navigation = useNavigation();
   const { complaint } = route.params;
   const updateStatusMutation = useUpdateComplaintStatus();
+  const { showError, showSuccess } = useErrorHandler();
 
   if (!complaint) return null;
 
@@ -24,11 +25,11 @@ export const AdminComplaintDetailScreen = () => {
             { id: complaint.id, status },
             {
               onSuccess: () => {
-                Toast.show({ type: 'success', text1: 'Status updated' });
+                showSuccess('Status updated.');
                 navigation.goBack();
               },
-              onError: () => {
-                Toast.show({ type: 'error', text1: 'Failed to update status' });
+              onError: (err: any) => {
+                showError(err);
               },
             }
           );

@@ -5,14 +5,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMyNotifications, markAsRead } from '../../api/notification.api';
 import { format, parseISO } from 'date-fns';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { parseError } from '../../lib/error-parser';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton';
 
 export const NotificationsScreen = () => {
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isFetching, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ['notifications', page],
     queryFn: () => getMyNotifications(page),
   });
@@ -59,7 +60,7 @@ export const NotificationsScreen = () => {
           </View>
         </View>
       ) : isError ? (
-        <ErrorState message="Something went wrong" onRetry={refetch} />
+        <ErrorCard error={parseError(error)} onRetry={refetch} />
       ) : (
         <FlatList
           data={notifications}

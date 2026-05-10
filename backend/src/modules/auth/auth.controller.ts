@@ -1,39 +1,31 @@
 import { Request, Response } from 'express';
 import { authService } from './auth.service';
-import { successResponse, errorResponse } from '../../lib/response';
+import { successResponse } from '../../lib/response';
 
-export const register = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response, next: any) => {
   try {
     const result = await authService.registerUser(req.body);
     successResponse(res, result, 'Registration successful', 201);
   } catch (error: any) {
-    if (error.message === 'Email already in use' || error.message === 'Mobile number already in use') {
-      errorResponse(res, error.message, 409);
-    } else {
-      errorResponse(res, error.message, 500);
-    }
+    next(error);
   }
 };
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response, next: any) => {
   try {
     const result = await authService.loginUser(req.body);
     successResponse(res, result, 'Login successful');
   } catch (error: any) {
-    if (error.message === 'Invalid credentials' || error.message === 'Account is inactive') {
-      errorResponse(res, error.message, 401);
-    } else {
-      errorResponse(res, error.message, 500);
-    }
+    next(error);
   }
 };
 
-export const getMe = async (req: Request, res: Response) => {
+export const getMe = async (req: Request, res: Response, next: any) => {
   try {
     const userId = req.user!.userId;
     const result = await authService.getMe(userId);
     successResponse(res, result, 'User retrieved successfully');
   } catch (error: any) {
-    errorResponse(res, error.message, 404);
+    next(error);
   }
 };

@@ -5,7 +5,8 @@ import { useAdminComplaints } from '../../hooks/useComplaints';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { format } from 'date-fns';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { parseError } from '../../lib/error-parser';
 
 const TABS = [
   { id: 'ALL', label: 'All' },
@@ -19,7 +20,7 @@ export const ComplaintsScreen = () => {
   const [activeTab, setActiveTab] = useState('ALL');
   
   const filters = activeTab === 'ALL' ? {} : { status: activeTab };
-  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useAdminComplaints(filters);
+  const { data, isLoading, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useAdminComplaints(filters);
 
   const handlePress = (complaint: any) => {
     navigation.navigate('AdminComplaintDetail', { complaintId: complaint.id, complaint });
@@ -73,7 +74,7 @@ export const ComplaintsScreen = () => {
           <ActivityIndicator size="large" color="#22c55e" />
         </View>
       ) : isError ? (
-        <ErrorState message="Something went wrong" onRetry={() => refetch()} />
+        <ErrorCard error={parseError(error)} onRetry={() => refetch()} />
       ) : (
         <FlatList
           data={data?.pages.flatMap(page => page.data.data) || []}

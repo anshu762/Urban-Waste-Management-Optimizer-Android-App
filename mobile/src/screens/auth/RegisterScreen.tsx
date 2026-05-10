@@ -5,7 +5,7 @@ import { AppInput } from '../../components/common/AppInput';
 import { AppButton } from '../../components/common/AppButton';
 import { registerApi } from '../../api/auth.api';
 import { useAuthStore } from '../../stores/auth.store';
-import { AppToast } from '../../components/common/AppToast';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 type Role = 'RESIDENT' | 'ADMIN' | 'DRIVER';
 
@@ -17,10 +17,11 @@ export const RegisterScreen = ({ navigation }: any) => {
   const [role, setRole] = useState<Role>('RESIDENT');
   const [isLoading, setIsLoading] = useState(false);
   const setAuth = useAuthStore((state) => state.setAuth);
+  const { showError, showSuccess } = useErrorHandler();
 
   const handleRegister = async () => {
     if (!fullName || !password || (!email && !mobile)) {
-      AppToast.showError('Validation Error', 'Please fill all required fields');
+      showError('Please fill all required fields');
       return;
     }
 
@@ -37,11 +38,10 @@ export const RegisterScreen = ({ navigation }: any) => {
       const response = await registerApi(payload);
       if (response.success && response.data) {
         setAuth(response.data.user, response.data.token);
-        AppToast.showSuccess('Account Created!', 'Welcome to Urban Waste Optimizer');
+        showSuccess('Account Created!', 'Welcome to Urban Waste Optimizer');
       }
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'Failed to register';
-      AppToast.showError('Registration Failed', msg);
+      showError(error);
     } finally {
       setIsLoading(false);
     }

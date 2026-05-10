@@ -8,15 +8,19 @@ import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { FullScreenError } from '../../components/common/FullScreenError';
+import { parseError } from '../../lib/error-parser';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 const RouteDetailScreen = ({ route, navigation }: any) => {
   const { routeId } = route.params;
-  const { data: planData, isLoading, isError, refetch } = useRoutePlanById(routeId);
-  const { data: vehiclesData, isError: vehiclesError, refetch: refetchVehicles } = useVehicles();
+  const { showError, showSuccess } = useErrorHandler();
+  const { data: planData, isLoading, isError, error, refetch } = useRoutePlanById(routeId);
+  const { data: vehiclesData, isError: vehiclesError, error: vehiclesErr, refetch: refetchVehicles } = useVehicles();
   const assignRoute = useAssignRoute();
 
-  const { data: driversData, isLoading: driversLoading, isError: driversError, refetch: refetchDrivers } = useQuery({
+  const { data: driversData, isLoading: driversLoading, isError: driversError, error: driversErr, refetch: refetchDrivers } = useQuery({
     queryKey: ['drivers'],
     queryFn: getDriversApi,
   });
@@ -34,7 +38,7 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
   }
 
   if (isError) {
-    return <ErrorState message="Something went wrong" onRetry={refetch} />;
+    return <FullScreenError error={parseError(error)} onRetry={refetch} />;
   }
 
   const plan = planData?.data;
@@ -54,11 +58,11 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
           vehicleId: selectedVehicleId,
         }
       });
-      Alert.alert('Success', 'Route assigned successfully!');
+      showSuccess('Route assigned successfully!');
       setModalVisible(false);
       refetch();
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to assign route');
+    } catch (err: any) {
+      showError(err);
     }
   };
 
@@ -205,7 +209,7 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text className="text-gray-500 font-bold text-xs uppercase mb-3">1. Select Driver</Text>
               {driversLoading ? <ActivityIndicator /> : driversError ? (
-                <ErrorState message="Something went wrong" onRetry={refetchDrivers} />
+                <ErrorCard error={parseError(driversErr)} onRetry={refetchDrivers} />
               ) : (
                 <View className="flex-row flex-wrap mb-6">
                   {drivers.map((d: any) => (
@@ -221,7 +225,7 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
               )}
 
               <Text className="text-gray-500 font-bold text-xs uppercase mb-3">2. Select Vehicle</Text>
-              {vehiclesError ? <ErrorState message="Something went wrong" onRetry={refetchVehicles} /> : null}
+              {vehiclesError ? <ErrorCard error={parseError(vehiclesErr)} onRetry={refetchVehicles} /> : null}
               <View className="flex-row flex-wrap mb-8">
                 {vehicles.filter((v: any) => v.isActive).map((v: any) => (
                   <TouchableOpacity

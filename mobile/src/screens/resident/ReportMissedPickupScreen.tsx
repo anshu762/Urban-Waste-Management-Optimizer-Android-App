@@ -2,23 +2,24 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import Toast from 'react-native-toast-message';
 import { AppButton } from '../../components/common/AppButton';
 import { useSubmitComplaint } from '../../hooks/useComplaints';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { InlineError } from '../../components/common/InlineError';
 
 import { useAuthStore } from '../../stores/auth.store';
 import { useQuery } from '@tanstack/react-query';
 import { getSchedulesByZone } from '../../api/schedule.api';
-import { ErrorState } from '../../components/common/ErrorState';
 
 export const ReportMissedPickupScreen = () => {
   const navigation = useNavigation();
   const submitComplaintMutation = useSubmitComplaint();
+  const { showError, showSuccess } = useErrorHandler();
 
   const user = useAuthStore((state) => state.user);
   const zoneId = user?.residentProfile?.zoneId;
 
-  const { data: schedulesResponse, isLoading, isError, refetch } = useQuery({
+  const { data: schedulesResponse, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['zoneSchedules', zoneId],
     queryFn: () => getSchedulesByZone(zoneId!),
     enabled: !!zoneId,
@@ -64,19 +65,11 @@ export const ReportMissedPickupScreen = () => {
 
     submitComplaintMutation.mutate(formData, {
       onSuccess: () => {
-        Toast.show({
-          type: 'success',
-          text1: 'Report submitted.',
-          text2: 'Admin will review it soon.',
-        });
+        showSuccess('Report submitted.', 'Admin will review it soon.');
         navigation.goBack();
       },
-      onError: (error: any) => {
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: error?.response?.data?.message || 'Failed to submit report',
-        });
+      onError: (err: any) => {
+        showError(err);
       },
     });
   };
@@ -91,7 +84,7 @@ export const ReportMissedPickupScreen = () => {
           {isLoading ? (
             <ActivityIndicator size="small" color="#22c55e" className="m-2" />
           ) : isError ? (
-            <ErrorState message="Something went wrong" onRetry={refetch} />
+            <InlineError message="Could not load schedules" />
           ) : schedules.length === 0 ? (
             <Text className="text-gray-500 my-2">No active schedules found.</Text>
           ) : (

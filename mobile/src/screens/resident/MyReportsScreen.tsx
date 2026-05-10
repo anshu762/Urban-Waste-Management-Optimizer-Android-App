@@ -6,7 +6,8 @@ import { useMyWasteLogs } from '../../hooks/useWasteLog';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { format } from 'date-fns';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { parseError } from '../../lib/error-parser';
 
 const CATEGORY_EMOJI: Record<string, string> = {
   WET: '🟢', DRY: '🟡', RECYCLABLE: '♻️', SANITARY: '🩺', EWASTE: '💻', HAZARDOUS: '☣️',
@@ -16,14 +17,15 @@ export const MyReportsScreen = () => {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<'logs' | 'complaints'>('logs');
 
-  const { data: complaintsData, isLoading: complaintsLoading, isError: complaintsError, refetch: refetchComplaints, fetchNextPage: fetchMoreComplaints, hasNextPage: hasMoreComplaints } = useMyComplaints();
-  const { data: logsData, isLoading: logsLoading, isError: logsError, refetch: refetchLogs, fetchNextPage: fetchMoreLogs, hasNextPage: hasMoreLogs } = useMyWasteLogs();
+  const { data: complaintsData, isLoading: complaintsLoading, isError: complaintsError, error: complaintsErr, refetch: refetchComplaints, fetchNextPage: fetchMoreComplaints, hasNextPage: hasMoreComplaints } = useMyComplaints();
+  const { data: logsData, isLoading: logsLoading, isError: logsError, error: logsErr, refetch: refetchLogs, fetchNextPage: fetchMoreLogs, hasNextPage: hasMoreLogs } = useMyWasteLogs();
 
   const complaints = complaintsData?.pages.flatMap((page) => page.data.data) || [];
   const wasteLogs = logsData?.pages.flatMap((page: any) => page.data?.data || page.data || []) || [];
 
   const isLoading = activeTab === 'logs' ? logsLoading : complaintsLoading;
   const isError = activeTab === 'logs' ? logsError : complaintsError;
+  const error = activeTab === 'logs' ? logsErr : complaintsErr;
   const refetch = activeTab === 'logs' ? refetchLogs : refetchComplaints;
 
   const renderWasteLog = ({ item }: { item: any }) => (
@@ -102,7 +104,7 @@ export const MyReportsScreen = () => {
           <ActivityIndicator size="large" color="#22c55e" />
         </View>
       ) : isError ? (
-        <ErrorState message="Something went wrong" onRetry={() => refetch()} />
+        <ErrorCard error={parseError(error)} onRetry={() => refetch()} />
       ) : activeTab === 'logs' ? (
         <FlatList
           data={wasteLogs}

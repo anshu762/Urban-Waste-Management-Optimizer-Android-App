@@ -6,7 +6,9 @@ import { getSchedulesByZone, createSchedule, deleteSchedule } from '../../api/sc
 import CategoryBadge from '../../components/common/CategoryBadge';
 import { AppButton } from '../../components/common/AppButton';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { parseError } from '../../lib/error-parser';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 export const ZoneDetailScreen = ({ route, navigation }: any) => {
   const { zoneId, zoneName } = route.params;
@@ -18,7 +20,8 @@ export const ZoneDetailScreen = ({ route, navigation }: any) => {
   const [pickupDay, setPickupDay] = useState(1);
   const [timeWindow, setTimeWindow] = useState('08:00 AM - 10:00 AM');
 
-  const { data: schedules, isLoading, isError, refetch } = useQuery({
+  const { showError, showSuccess } = useErrorHandler();
+  const { data: schedules, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['schedules', zoneId],
     queryFn: () => getSchedulesByZone(zoneId),
   });
@@ -28,6 +31,10 @@ export const ZoneDetailScreen = ({ route, navigation }: any) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedules', zoneId] });
       setIsModalVisible(false);
+      showSuccess('Schedule added successfully.');
+    },
+    onError: (err: any) => {
+      showError(err);
     },
   });
 
@@ -35,6 +42,10 @@ export const ZoneDetailScreen = ({ route, navigation }: any) => {
     mutationFn: deleteSchedule,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedules', zoneId] });
+      showSuccess('Schedule deleted.');
+    },
+    onError: (err: any) => {
+      showError(err);
     },
   });
 
@@ -75,7 +86,7 @@ export const ZoneDetailScreen = ({ route, navigation }: any) => {
             <ActivityIndicator size="large" color="#10b981" />
           </View>
         ) : isError ? (
-          <ErrorState message="Something went wrong" onRetry={refetch} />
+          <ErrorCard error={parseError(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={schedules?.data}

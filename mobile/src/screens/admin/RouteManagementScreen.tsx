@@ -6,14 +6,18 @@ import { useZones } from '../../hooks/useZones';
 import { Ionicons } from '@expo/vector-icons';
 import { format, isToday, isYesterday } from 'date-fns';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { InlineError } from '../../components/common/InlineError';
+import { parseError } from '../../lib/error-parser';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 const RouteManagementScreen = ({ route, navigation }: any) => {
   const { preselectedZoneId } = route?.params || {};
-  const { data: zonesData, isLoading: zonesLoading, isError: zonesError, refetch: refetchZones } = useZones();
+  const { showError, showSuccess } = useErrorHandler();
+  const { data: zonesData, isLoading: zonesLoading, isError: zonesError, error: zonesErr, refetch: refetchZones } = useZones();
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(preselectedZoneId || null);
   
-  const { data: plansData, isLoading: plansLoading, isError: plansError, refetch } = useRoutePlans({ 
+  const { data: plansData, isLoading: plansLoading, isError: plansError, error: plansErr, refetch } = useRoutePlans({ 
     zoneId: selectedZoneId || '' 
   });
   
@@ -34,14 +38,14 @@ const RouteManagementScreen = ({ route, navigation }: any) => {
   }, [zonesData]);
 
   const handleGenerate = async () => {
-    if (!selectedZoneId) return Alert.alert('Error', 'Please select a zone first');
+    if (!selectedZoneId) return showError('Please select a zone first');
     
     try {
       await generateRoute.mutateAsync({ zoneId: selectedZoneId });
-      Alert.alert('Success', 'Route plan generated successfully');
+      showSuccess('Route plan generated successfully');
       refetch();
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to generate route');
+    } catch (err: any) {
+      showError(err);
     }
   };
 
@@ -147,7 +151,7 @@ const RouteManagementScreen = ({ route, navigation }: any) => {
           {zonesLoading ? (
             <ActivityIndicator size="small" color="#059669" />
           ) : zonesError ? (
-            <ErrorState message="Something went wrong" onRetry={refetchZones} />
+            <InlineError message="Could not load zones" />
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
               {zonesData?.data?.map((zone: any) => (
@@ -175,7 +179,7 @@ const RouteManagementScreen = ({ route, navigation }: any) => {
           <ActivityIndicator size="large" color="#059669" />
         </View>
       ) : plansError ? (
-        <ErrorState message="Something went wrong" onRetry={refetch} />
+        <ErrorCard error={parseError(plansErr)} onRetry={refetch} />
       ) : (
         <FlatList
           data={plansData?.data || []}

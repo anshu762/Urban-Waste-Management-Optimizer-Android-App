@@ -1,44 +1,45 @@
 import { Request, Response } from 'express';
 import { userService } from './user.service';
-import { successResponse, errorResponse } from '../../lib/response';
+import { successResponse } from '../../lib/response';
+import { Errors } from '../../lib/app-error';
 
-export const updateProfile = async (req: Request, res: Response) => {
+export const updateProfile = async (req: Request, res: Response, next: any) => {
   try {
     const userId = req.user!.userId;
     const role = req.user!.role;
 
     if (role !== 'RESIDENT') {
-      return errorResponse(res, 'Only residents can update this profile', 403);
+      throw Errors.unauthorized();
     }
 
     const result = await userService.updateResidentProfile(userId, req.body);
     successResponse(res, result, 'Profile updated successfully');
   } catch (error: any) {
-    errorResponse(res, error.message, 500);
+    next(error);
   }
 };
 
-export const getDrivers = async (req: Request, res: Response) => {
+export const getDrivers = async (req: Request, res: Response, next: any) => {
   try {
     const result = await userService.listDrivers();
     successResponse(res, result, 'Drivers fetched successfully');
   } catch (error: any) {
-    errorResponse(res, error.message, 500);
+    next(error);
   }
 };
 
-export const updatePushToken = async (req: Request, res: Response) => {
+export const updatePushToken = async (req: Request, res: Response, next: any) => {
   try {
     const userId = req.user!.userId;
     const { pushToken } = req.body;
 
     if (pushToken !== null && typeof pushToken !== 'string') {
-      return errorResponse(res, 'pushToken must be a string or null', 400);
+      throw Errors.validationFailed();
     }
 
     const result = await userService.updatePushToken(userId, pushToken);
     successResponse(res, result, 'Push token updated successfully');
   } catch (error: any) {
-    errorResponse(res, error.message, 500);
+    next(error);
   }
 };

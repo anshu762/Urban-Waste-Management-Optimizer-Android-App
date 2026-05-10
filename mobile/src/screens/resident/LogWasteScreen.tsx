@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AppButton } from '../../components/common/AppButton';
 import { CategoryChip } from '../../components/resident/CategoryChip';
 import { useSubmitWasteLog } from '../../hooks/useWasteLog';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 const WASTE_CATEGORIES = ['WET', 'DRY', 'RECYCLABLE', 'SANITARY', 'EWASTE', 'HAZARDOUS'];
 
@@ -20,6 +21,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
 export const LogWasteScreen = () => {
   const navigation = useNavigation();
   const submitWasteLogMutation = useSubmitWasteLog();
+  const { showError, showSuccess: showSuccessToast } = useErrorHandler();
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [segregationStatus, setSegregationStatus] = useState<string | null>(null);
@@ -67,12 +69,10 @@ export const LogWasteScreen = () => {
       {
         onSuccess: () => {
           setShowSuccess(true);
+          showSuccessToast("Waste logged successfully!");
         },
         onError: (error: any) => {
-          Alert.alert(
-            'Submission Failed',
-            error?.response?.data?.message || 'Could not log waste. Please try again.',
-          );
+          showError(error);
         },
       }
     );

@@ -1,10 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+const { width } = Dimensions.get('window');
 import { useZones } from '../../hooks/useZones';
 import { useGenerateMockSensorData, useZoneSensorSummary } from '../../hooks/useIoT';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { FullScreenError } from '../../components/common/FullScreenError';
+import { parseError } from '../../lib/error-parser';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton';
 
 const fillColor = (fillLevel: number) => {
@@ -14,7 +17,7 @@ const fillColor = (fillLevel: number) => {
 };
 
 export const IoTDashboardScreen = () => {
-  const { data: zonesData, isLoading: zonesLoading, isError: zonesError, refetch: refetchZones } = useZones();
+  const { data: zonesData, isLoading: zonesLoading, isError: zonesError, error: zonesErr, refetch: refetchZones } = useZones();
   const zones = zonesData?.data || [];
   const [selectedZoneId, setSelectedZoneId] = useState<string | undefined>();
   const activeZoneId = selectedZoneId || zones[0]?.id;
@@ -24,6 +27,7 @@ export const IoTDashboardScreen = () => {
     data: summaryData,
     isLoading,
     isError,
+    error,
     refetch,
   } = useZoneSensorSummary(activeZoneId);
   const generateMock = useGenerateMockSensorData();
@@ -32,18 +36,19 @@ export const IoTDashboardScreen = () => {
   if (zonesLoading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 p-4">
-        <ActivityIndicator size="large" color="#10b981" />
-        <View className="mt-6 gap-y-3">
-          <LoadingSkeleton height={72} borderRadius={12} />
-          <LoadingSkeleton height={72} borderRadius={12} />
-          <LoadingSkeleton height={72} borderRadius={12} />
+        <View className="gap-y-4">
+          <LoadingSkeleton height={60} borderRadius={12} />
+          <LoadingSkeleton height={40} borderRadius={20} width={width * 0.7} />
+          <LoadingSkeleton height={100} borderRadius={12} />
+          <LoadingSkeleton height={100} borderRadius={12} />
+          <LoadingSkeleton height={100} borderRadius={12} />
         </View>
       </SafeAreaView>
     );
   }
 
   if (zonesError) {
-    return <ErrorState message="Something went wrong" onRetry={refetchZones} />;
+    return <FullScreenError error={parseError(zonesErr)} onRetry={refetchZones} />;
   }
 
   return (
@@ -93,7 +98,7 @@ export const IoTDashboardScreen = () => {
           <LoadingSkeleton height={96} borderRadius={12} />
         </View>
       ) : isError ? (
-        <ErrorState message="Something went wrong" onRetry={refetch} />
+        <ErrorCard error={parseError(error)} onRetry={refetch} />
       ) : (
         <FlatList
           data={bins}
@@ -103,9 +108,7 @@ export const IoTDashboardScreen = () => {
             <EmptyState
               emoji="🧪"
               title="No sensor data yet"
-              subtitle="Generate demo readings to preview pilot bin telemetry."
-              actionLabel="Generate Mock Data"
-              onAction={() => activeZoneId && generateMock.mutate(activeZoneId)}
+              subtitle="Generate demo readings to preview pilot bin telemetry using the button above."
             />
           }
           renderItem={({ item }: any) => (

@@ -6,12 +6,15 @@ import { getZonesApi } from '../../api/zone.api';
 import { useAuthStore } from '../../stores/auth.store';
 import { apiClient } from '../../config/api.config';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { parseError } from '../../lib/error-parser';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 export const ZoneManagementScreen = ({ navigation }: any) => {
   const queryClient = useQueryClient();
 
-  const { data: zones, isLoading, isError, refetch } = useQuery({
+  const { showError, showSuccess } = useErrorHandler();
+  const { data: zones, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['zones'],
     queryFn: getZonesApi,
   });
@@ -20,6 +23,10 @@ export const ZoneManagementScreen = ({ navigation }: any) => {
     mutationFn: (id: string) => apiClient.delete(`/zones/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['zones'] });
+      showSuccess('Zone deactivated successfully.');
+    },
+    onError: (err: any) => {
+      showError(err);
     },
   });
 
@@ -73,6 +80,10 @@ export const ZoneManagementScreen = ({ navigation }: any) => {
       setZoneName('');
       setCity('');
       setAreaCode('');
+      showSuccess('Zone created successfully.');
+    },
+    onError: (err: any) => {
+      showError(err);
     },
   });
 
@@ -118,7 +129,7 @@ export const ZoneManagementScreen = ({ navigation }: any) => {
             <ActivityIndicator size="large" color="#10b981" />
         </View>
       ) : isError ? (
-        <ErrorState message="Something went wrong" onRetry={refetch} />
+        <ErrorCard error={parseError(error)} onRetry={refetch} />
       ) : (
         <FlatList
           data={zones?.data}

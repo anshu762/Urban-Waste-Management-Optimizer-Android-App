@@ -5,8 +5,8 @@ import { AppInput } from '../../components/common/AppInput';
 import { AppButton } from '../../components/common/AppButton';
 import { updateProfileApi } from '../../api/user.api';
 import { getZonesApi } from '../../api/zone.api';
-import { AppToast } from '../../components/common/AppToast';
 import { useAuthStore } from '../../stores/auth.store';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 export const AddressSetupScreen = ({ navigation }: any) => {
   const [zones, setZones] = useState<any[]>([]);
@@ -19,6 +19,7 @@ export const AddressSetupScreen = ({ navigation }: any) => {
   const [houseNumber, setHouseNumber] = useState('');
   const [landmark, setLandmark] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showError, showSuccess } = useErrorHandler();
 
   useEffect(() => {
     fetchZones();
@@ -34,7 +35,7 @@ export const AddressSetupScreen = ({ navigation }: any) => {
         }
       }
     } catch (error) {
-      AppToast.showError('Error', 'Failed to load zones');
+      showError('Failed to load zones');
     } finally {
       setIsLoadingZones(false);
     }
@@ -69,12 +70,12 @@ export const AddressSetupScreen = ({ navigation }: any) => {
         }
         
         await useAuthStore.getState().completeOnboarding();
-        AppToast.showSuccess('Success', 'Address updated successfully');
+        showSuccess('Address updated successfully');
       }
       
       // The RootNavigator will automatically react to the state change and switch to ResidentStack
     } catch (error) {
-      AppToast.showError('Submission Failed', 'Could not update profile');
+      showError(error);
     } finally {
       setIsSubmitting(false);
     }

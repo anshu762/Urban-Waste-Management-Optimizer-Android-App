@@ -4,10 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVehicles, useCreateVehicle, useDeleteVehicle } from '../../hooks/useVehicles';
 import { Ionicons } from '@expo/vector-icons';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { parseError } from '../../lib/error-parser';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 const VehicleManagementScreen = () => {
-  const { data: vehiclesData, isLoading, isError, refetch } = useVehicles(true);
+  const { showError, showSuccess } = useErrorHandler();
+  const { data: vehiclesData, isLoading, isError, error, refetch } = useVehicles(true);
   const createVehicle = useCreateVehicle();
   const deleteVehicle = useDeleteVehicle();
 
@@ -16,7 +19,7 @@ const VehicleManagementScreen = () => {
   const [newCapacity, setNewCapacity] = useState('100');
 
   const handleCreate = async () => {
-    if (!newVehicleNumber) return Alert.alert('Error', 'Vehicle number is required');
+    if (!newVehicleNumber) return showError('Vehicle number is required');
     try {
       await createVehicle.mutateAsync({ 
         vehicleNumber: newVehicleNumber, 
@@ -25,9 +28,9 @@ const VehicleManagementScreen = () => {
       setModalVisible(false);
       setNewVehicleNumber('');
       setNewCapacity('100');
-      Alert.alert('Success', 'Vehicle added successfully');
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to add vehicle');
+      showSuccess('Vehicle added successfully');
+    } catch (err: any) {
+      showError(err);
     }
   };
 
@@ -40,9 +43,9 @@ const VehicleManagementScreen = () => {
         onPress: async () => {
           try {
             await deleteVehicle.mutateAsync(id);
-            Alert.alert('Success', 'Vehicle removed');
-          } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to remove vehicle');
+            showSuccess('Vehicle removed');
+          } catch (err: any) {
+            showError(err);
           }
         } 
       }
@@ -86,7 +89,7 @@ const VehicleManagementScreen = () => {
           <ActivityIndicator size="large" color="#059669" />
         </View>
       ) : isError ? (
-        <ErrorState message="Something went wrong" onRetry={refetch} />
+        <ErrorCard error={parseError(error)} onRetry={refetch} />
       ) : (
         <FlatList
           data={vehiclesData?.data || []}

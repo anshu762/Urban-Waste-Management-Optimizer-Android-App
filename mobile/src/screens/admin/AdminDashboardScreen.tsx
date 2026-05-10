@@ -7,7 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { exportDashboardCsvApi } from '../../api/dashboard.api';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { FullScreenError } from '../../components/common/FullScreenError';
+import { parseError } from '../../lib/error-parser';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton';
 
 const { width } = Dimensions.get('window');
@@ -178,9 +180,9 @@ const AdminDashboardScreen = ({ navigation }: any) => {
   const [zoneId] = useState<string | undefined>(undefined);
   const [isExporting, setIsExporting] = useState(false);
 
-  const { data: statsData, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useDashboardStats({ zone_id: zoneId });
-  const { data: weeklyData, isLoading: weeklyLoading, isError: weeklyError, refetch: refetchWeekly } = useWeeklyLogVolume(zoneId);
-  const { data: categoryData, isLoading: categoryLoading, isError: categoryError, refetch: refetchCategory } = useCategoryBreakdown({ zone_id: zoneId });
+  const { data: statsData, isLoading: statsLoading, isError: statsError, error: statsErr, refetch: refetchStats } = useDashboardStats({ zone_id: zoneId });
+  const { data: weeklyData, isLoading: weeklyLoading, isError: weeklyError, error: weeklyErr, refetch: refetchWeekly } = useWeeklyLogVolume(zoneId);
+  const { data: categoryData, isLoading: categoryLoading, isError: categoryError, error: categoryErr, refetch: refetchCategory } = useCategoryBreakdown({ zone_id: zoneId });
 
   const onRefresh = () => { refetchStats(); refetchWeekly(); refetchCategory(); };
   const hasError = statsError || weeklyError || categoryError;
@@ -266,13 +268,28 @@ const AdminDashboardScreen = ({ navigation }: any) => {
         refreshControl={<RefreshControl refreshing={statsLoading || weeklyLoading || categoryLoading} onRefresh={onRefresh} tintColor="#00A36C" />}
       >
         {isInitialLoading ? (
-          <View style={{ gap: 12, marginBottom: 16 }}>
-            <ActivityIndicator size="large" color="#00A36C" />
-            <LoadingSkeleton height={84} borderRadius={12} />
-            <LoadingSkeleton height={200} borderRadius={12} />
+          <View style={{ gap: 16, marginBottom: 16 }}>
+            {/* Stats Grid Skeleton */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+              <LoadingSkeleton width={width / 2 - 24} height={72} borderRadius={16} />
+              <LoadingSkeleton width={width / 2 - 24} height={72} borderRadius={16} />
+              <LoadingSkeleton width={width / 2 - 24} height={72} borderRadius={16} />
+              <LoadingSkeleton width={width / 2 - 24} height={72} borderRadius={16} />
+            </View>
+
+            {/* Nav Grid Skeleton */}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <LoadingSkeleton flex={1} height={80} borderRadius={16} />
+              <LoadingSkeleton flex={1} height={80} borderRadius={16} />
+              <LoadingSkeleton flex={1} height={80} borderRadius={16} />
+            </View>
+
+            {/* Chart Skeleton */}
+            <LoadingSkeleton height={220} borderRadius={24} />
+            <LoadingSkeleton height={180} borderRadius={24} />
           </View>
         ) : hasError ? (
-          <ErrorState message="Something went wrong" onRetry={onRefresh} />
+          <ErrorCard error={parseError(statsErr || weeklyErr || categoryErr)} onRetry={onRefresh} />
         ) : (
           <>
         {/* Quick Stats Grid */}

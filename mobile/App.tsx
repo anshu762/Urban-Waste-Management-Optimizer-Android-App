@@ -16,6 +16,8 @@ const AppBootstrap = () => {
   return <RootNavigator />;
 };
 
+
+
 export default function App() {
   const { isLoading, loadFromStorage } = useAuthStore();
 

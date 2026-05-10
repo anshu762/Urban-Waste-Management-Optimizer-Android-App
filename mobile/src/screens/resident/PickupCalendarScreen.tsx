@@ -18,14 +18,15 @@ import {
 } from 'date-fns';
 import CategoryBadge from '../../components/common/CategoryBadge';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ErrorState } from '../../components/common/ErrorState';
+import { ErrorCard } from '../../components/common/ErrorCard';
+import { parseError } from '../../lib/error-parser';
 
 export const PickupCalendarScreen = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const user = useAuthStore((state) => state.user);
   const zoneId = user?.residentProfile?.zoneId;
 
-  const { data: pickups, isLoading, isError, refetch } = useQuery({
+  const { data: pickups, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['upcomingPickups', zoneId],
     queryFn: () => getUpcomingPickups(zoneId!),
     enabled: !!zoneId,
@@ -123,7 +124,7 @@ export const PickupCalendarScreen = () => {
             <ActivityIndicator size="large" color="#10b981" />
           </View>
         ) : isError ? (
-          <ErrorState message="Something went wrong" onRetry={refetch} />
+          <ErrorCard error={parseError(error)} onRetry={refetch} />
         ) : selectedDate ? (
           <View>
             <Text className="text-lg font-bold text-gray-900 mb-4">
