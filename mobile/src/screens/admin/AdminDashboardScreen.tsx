@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Dimensions, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDashboardStats, useWeeklyLogVolume, useCategoryBreakdown } from '../../hooks/useDashboard';
+import { useAuthStore } from '../../stores/auth.store';
 import Svg, { Rect, Text as SvgText, G, Circle, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { File, Paths } from 'expo-file-system';
@@ -151,26 +152,32 @@ const StatCard = ({
 }: { title: string; value: string | number; icon: any; color: string }) => (
   <View style={{
     backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 16,
+    padding: 18,
+    borderRadius: 24,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    borderColor: '#F1F5F9',
     width: width / 2 - 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 3,
   }}>
-    <View>
-      <Text style={{ color: '#6B7280', fontSize: 11, fontWeight: '500', marginBottom: 4 }}>{title}</Text>
-      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>{value}</Text>
-    </View>
-    <View style={{ padding: 8, borderRadius: 999, backgroundColor: `${color}22` }}>
+    <View style={{ 
+      width: 40, 
+      height: 40, 
+      borderRadius: 12, 
+      backgroundColor: `${color}15`, 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      marginBottom: 12
+    }}>
       <Ionicons name={icon} size={20} color={color} />
+    </View>
+    <Text style={{ color: '#64748B', fontSize: 11, fontWeight: '600', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>{title}</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+      <Text style={{ fontSize: 24, fontWeight: '800', color: '#0F172A' }}>{value}</Text>
     </View>
   </View>
 );
@@ -229,36 +236,62 @@ const AdminDashboardScreen = ({ navigation }: any) => {
 
   const pieData = rawCategory;
 
+  const user = useAuthStore((state) => state.user);
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      {/* Header */}
-      <View style={{ paddingHorizontal: 16, paddingVertical: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>Admin Dashboard</Text>
-          <Text style={{ color: '#6B7280', fontSize: 13 }}>Waste Management Overview</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      {/* Premium Header */}
+      <View style={{ 
+        paddingHorizontal: 20, 
+        paddingVertical: 12, 
+        backgroundColor: '#fff', 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#F8FAFC'
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ 
+            width: 44, 
+            height: 44, 
+            borderRadius: 22, 
+            backgroundColor: '#F1F5F9', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            marginRight: 12,
+            borderWidth: 1,
+            borderColor: '#E2E8F0'
+          }}>
+            <Text style={{ color: '#0F172A', fontWeight: 'bold', fontSize: 16 }}>
+              {user?.fullName?.charAt(0) || 'A'}
+            </Text>
+          </View>
+          <View>
+            <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '500' }}>{getGreeting()},</Text>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#0F172A' }}>{user?.fullName?.split(' ')[0] || 'Admin'}</Text>
+          </View>
         </View>
+
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <TouchableOpacity
-            style={{ backgroundColor: '#111827', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#F1F5F9' }}
             onPress={handleExport}
             disabled={isExporting}
           >
-            <Ionicons name="download" size={15} color="white" />
-            <Text style={{ color: '#fff', fontWeight: 'bold', marginLeft: 4, fontSize: 12 }}>{isExporting ? 'Exporting' : 'CSV'}</Text>
+            <Ionicons name="download-outline" size={20} color={isExporting ? '#94A3B8' : '#0F172A'} />
           </TouchableOpacity>
           <TouchableOpacity
-            style={{ backgroundColor: '#00A36C', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
-            onPress={() => navigation.navigate('RouteManagement')}
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#F1F5F9' }}
           >
-            <Ionicons name="map" size={15} color="white" />
-            <Text style={{ color: '#fff', fontWeight: 'bold', marginLeft: 4, fontSize: 12 }}>Routes</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ backgroundColor: '#3B82F6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
-            onPress={() => navigation.navigate('VehicleManagement')}
-          >
-            <Ionicons name="bus" size={15} color="white" />
-            <Text style={{ color: '#fff', fontWeight: 'bold', marginLeft: 4, fontSize: 12 }}>Fleet</Text>
+            <Ionicons name="notifications-outline" size={20} color="#0F172A" />
+            <View style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', borderWidth: 1.5, borderColor: '#fff' }} />
           </TouchableOpacity>
         </View>
       </View>
@@ -282,7 +315,6 @@ const AdminDashboardScreen = ({ navigation }: any) => {
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <View style={{ flex: 1 }}><LoadingSkeleton height={80} borderRadius={16} /></View>
               <View style={{ flex: 1 }}><LoadingSkeleton height={80} borderRadius={16} /></View>
-              <View style={{ flex: 1 }}><LoadingSkeleton height={80} borderRadius={16} /></View>
             </View>
 
             {/* Chart Skeleton */}
@@ -303,6 +335,40 @@ const AdminDashboardScreen = ({ navigation }: any) => {
           <StatCard title="Pickups Due" value={stats.pickupsDueToday} icon="calendar" color="#8B5CF6" />
         </View>
 
+        {/* Main Control Center */}
+        <View style={{ marginBottom: 24 }}>
+          <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#64748B', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Control Center</Text>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('RouteManagement')}
+              style={{ flex: 1, backgroundColor: '#0F172A', borderRadius: 20, padding: 18, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 5 }}
+            >
+              <Ionicons name="map" size={24} color="#10B981" />
+              <Text style={{ marginTop: 8, fontWeight: 'bold', color: '#fff', fontSize: 14 }}>Routes</Text>
+              <Text style={{ color: '#94A3B8', fontSize: 10, marginTop: 2 }}>Optimize Plan</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={() => navigation.navigate('VehicleManagement')}
+              style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.02, elevation: 1 }}
+            >
+              <Ionicons name="bus" size={24} color="#3B82F6" />
+              <Text style={{ marginTop: 8, fontWeight: 'bold', color: '#0F172A', fontSize: 14 }}>Fleet</Text>
+              <Text style={{ color: '#64748B', fontSize: 10, marginTop: 2 }}>Manage Trucks</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ZoneManagement')}
+              style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.02, elevation: 1 }}
+            >
+              <Ionicons name="location" size={24} color="#F59E0B" />
+              <Text style={{ marginTop: 8, fontWeight: 'bold', color: '#0F172A', fontSize: 14 }}>Zones</Text>
+              <Text style={{ color: '#64748B', fontSize: 10, marginTop: 2 }}>Service Areas</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#64748B', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Performance Overview</Text>
 
         {/* Weekly Log Volume Chart */}
         <View style={{ backgroundColor: '#fff', padding: 16, borderRadius: 24, marginBottom: 16, borderWidth: 1, borderColor: '#F3F4F6' }}>
