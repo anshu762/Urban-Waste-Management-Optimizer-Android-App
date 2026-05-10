@@ -8,9 +8,10 @@ import { format, isToday, isYesterday } from 'date-fns';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 
-const RouteManagementScreen = ({ navigation }: any) => {
+const RouteManagementScreen = ({ route, navigation }: any) => {
+  const { preselectedZoneId } = route?.params || {};
   const { data: zonesData, isLoading: zonesLoading, isError: zonesError, refetch: refetchZones } = useZones();
-  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(preselectedZoneId || null);
   
   const { data: plansData, isLoading: plansLoading, isError: plansError, refetch } = useRoutePlans({ 
     zoneId: selectedZoneId || '' 
@@ -18,7 +19,14 @@ const RouteManagementScreen = ({ navigation }: any) => {
   
   const generateRoute = useGenerateRoute();
 
-  // Select first zone by default if available
+  // Handle preselected zone updates if navigated from another screen
+  useEffect(() => {
+    if (preselectedZoneId) {
+      setSelectedZoneId(preselectedZoneId);
+    }
+  }, [preselectedZoneId]);
+
+  // Select first zone by default if available and nothing is selected
   useEffect(() => {
     if (zonesData?.success && zonesData.data.length > 0 && !selectedZoneId) {
       setSelectedZoneId(zonesData.data[0].id);

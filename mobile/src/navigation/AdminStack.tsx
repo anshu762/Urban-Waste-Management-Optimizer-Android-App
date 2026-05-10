@@ -15,6 +15,11 @@ import VehicleManagementScreen from '../screens/admin/VehicleManagementScreen';
 import RouteManagementScreen from '../screens/admin/RouteManagementScreen';
 import RouteDetailScreen from '../screens/admin/RouteDetailScreen';
 import { IoTDashboardScreen } from '../screens/admin/IoTDashboardScreen';
+import AnalyticsHomeScreen from '../screens/admin/analytics/AnalyticsHomeScreen';
+import DemandForecastScreen from '../screens/admin/analytics/DemandForecastScreen';
+import ZoneRankingScreen from '../screens/admin/analytics/ZoneRankingScreen';
+import ComplianceTrendScreen from '../screens/admin/analytics/ComplianceTrendScreen';
+import InactiveResidentsScreen from '../screens/admin/analytics/InactiveResidentsScreen';
 
 const tabIcon = (emoji: string) => ({ color }: { color: string }) => (
   <Text style={{ color, fontSize: 18 }}>{emoji}</Text>
@@ -33,6 +38,7 @@ const AdminTabs = () => (
     <Tab.Screen name="Complaints" component={ComplaintsScreen} options={{ tabBarIcon: tabIcon('⚠️') }} />
     <Tab.Screen name="RouteManagement" component={RouteManagementScreen} options={{ title: 'Route Planner', tabBarIcon: tabIcon('🗺️') }} />
     <Tab.Screen name="IoTDashboard" component={IoTDashboardScreen} options={{ title: 'IoT', tabBarIcon: tabIcon('📡') }} />
+    <Tab.Screen name="AnalyticsHome" component={AnalyticsHomeScreen} options={{ title: 'Analytics', tabBarIcon: tabIcon('📈') }} />
   </Tab.Navigator>
 );
 
@@ -43,5 +49,9 @@ export const AdminStack = () => (
     <Stack.Screen name="AdminComplaintDetail" component={AdminComplaintDetailScreen} />
     <Stack.Screen name="VehicleManagement" component={VehicleManagementScreen} />
     <Stack.Screen name="RouteDetail" component={RouteDetailScreen} />
+    <Stack.Screen name="DemandForecast" component={DemandForecastScreen} />
+    <Stack.Screen name="ZoneRanking" component={ZoneRankingScreen} />
+    <Stack.Screen name="ComplianceTrend" component={ComplianceTrendScreen} />
+    <Stack.Screen name="InactiveResidents" component={InactiveResidentsScreen} />
   </Stack.Navigator>
 );
