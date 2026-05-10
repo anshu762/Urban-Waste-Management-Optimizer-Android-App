@@ -110,7 +110,7 @@ export const MyReportsScreen = () => {
           data={wasteLogs}
           keyExtractor={(item) => item.id}
           renderItem={renderWasteLog}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
           ListEmptyComponent={
             <EmptyState emoji="✅" title="No reports yet" subtitle="Report a missed pickup if collection did not happen." />
           }

@@ -21,30 +21,27 @@ import ZoneRankingScreen from '../screens/admin/analytics/ZoneRankingScreen';
 import ComplianceTrendScreen from '../screens/admin/analytics/ComplianceTrendScreen';
 import InactiveResidentsScreen from '../screens/admin/analytics/InactiveResidentsScreen';
 
-const tabIcon = (emoji: string) => ({ color }: { color: string }) => (
-  <Text style={{ color, fontSize: 18 }}>{emoji}</Text>
-);
+import { CustomTabBar } from '../components/navigation/CustomTabBar';
 
 const AdminTabs = () => (
   <Tab.Navigator
+    tabBar={(props) => <CustomTabBar {...props} />}
     screenOptions={{
       headerShown: false,
-      tabBarActiveTintColor: '#16a34a',
-      tabBarInactiveTintColor: '#9ca3af',
     }}
   >
-    <Tab.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: 'Dashboard', tabBarIcon: tabIcon('📊') }} />
-    <Tab.Screen name="ZoneManagement" component={ZoneManagementScreen} options={{ title: 'Zones', tabBarIcon: tabIcon('📍') }} />
-    <Tab.Screen name="Complaints" component={ComplaintsScreen} options={{ tabBarIcon: tabIcon('⚠️') }} />
-    <Tab.Screen name="RouteManagement" component={RouteManagementScreen} options={{ title: 'Route Planner', tabBarIcon: tabIcon('🗺️') }} />
-    <Tab.Screen name="IoTDashboard" component={IoTDashboardScreen} options={{ title: 'IoT', tabBarIcon: tabIcon('📡') }} />
-    <Tab.Screen name="AnalyticsHome" component={AnalyticsHomeScreen} options={{ title: 'Analytics', tabBarIcon: tabIcon('📈') }} />
+    <Tab.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: 'Dashboard' }} />
+    <Tab.Screen name="Complaints" component={ComplaintsScreen} options={{ title: 'Issues' }} />
+    <Tab.Screen name="IoTDashboard" component={IoTDashboardScreen} options={{ title: 'IoT' }} />
+    <Tab.Screen name="AnalyticsHome" component={AnalyticsHomeScreen} options={{ title: 'Insights' }} />
   </Tab.Navigator>
 );
 
 export const AdminStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="AdminRoot">
     <Stack.Screen name="AdminRoot" component={AdminTabs} />
+    <Stack.Screen name="ZoneManagement" component={ZoneManagementScreen} />
+    <Stack.Screen name="RouteManagement" component={RouteManagementScreen} />
     <Stack.Screen name="ZoneDetail" component={ZoneDetailScreen} />
     <Stack.Screen name="AdminComplaintDetail" component={AdminComplaintDetailScreen} />
     <Stack.Screen name="VehicleManagement" component={VehicleManagementScreen} />

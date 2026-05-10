@@ -135,7 +135,7 @@ export const ZoneManagementScreen = ({ navigation }: any) => {
           data={zones?.data}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: 24 }}
           ListEmptyComponent={
             <EmptyState emoji="📍" title="No zones found" subtitle="Create your first service zone to start scheduling pickups." />
           }

@@ -80,7 +80,7 @@ export const ComplaintsScreen = () => {
           data={data?.pages.flatMap(page => page.data.data) || []}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
           ListEmptyComponent={
             <EmptyState emoji="✅" title="No complaints found" subtitle="Missed pickup reports from residents will appear here." />
           }

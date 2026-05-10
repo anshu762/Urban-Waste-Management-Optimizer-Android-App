@@ -31,7 +31,7 @@ export const HomeScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1 px-4">
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="py-6 flex-row justify-between items-center">
           <View>
             <Text className="text-gray-500 text-sm">Welcome back,</Text>

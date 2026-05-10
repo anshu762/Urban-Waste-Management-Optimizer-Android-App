@@ -265,6 +265,7 @@ const AdminDashboardScreen = ({ navigation }: any) => {
 
       <ScrollView
         style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}
+        contentContainerStyle={{ paddingBottom: 32 }}
         refreshControl={<RefreshControl refreshing={statsLoading || weeklyLoading || categoryLoading} onRefresh={onRefresh} tintColor="#00A36C" />}
       >
         {isInitialLoading ? (
@@ -279,9 +280,9 @@ const AdminDashboardScreen = ({ navigation }: any) => {
 
             {/* Nav Grid Skeleton */}
             <View style={{ flexDirection: 'row', gap: 12 }}>
-              <LoadingSkeleton flex={1} height={80} borderRadius={16} />
-              <LoadingSkeleton flex={1} height={80} borderRadius={16} />
-              <LoadingSkeleton flex={1} height={80} borderRadius={16} />
+              <View style={{ flex: 1 }}><LoadingSkeleton height={80} borderRadius={16} /></View>
+              <View style={{ flex: 1 }}><LoadingSkeleton height={80} borderRadius={16} /></View>
+              <View style={{ flex: 1 }}><LoadingSkeleton height={80} borderRadius={16} /></View>
             </View>
 
             {/* Chart Skeleton */}
@@ -302,30 +303,6 @@ const AdminDashboardScreen = ({ navigation }: any) => {
           <StatCard title="Pickups Due" value={stats.pickupsDueToday} icon="calendar" color="#8B5CF6" />
         </View>
 
-        {/* Quick Navigation Cards */}
-        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('ZoneManagement')}
-            style={{ flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#F3F4F6', alignItems: 'center' }}
-          >
-            <Ionicons name="location" size={28} color="#00A36C" />
-            <Text style={{ marginTop: 6, fontWeight: '600', color: '#374151', fontSize: 13 }}>Zones</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Complaints')}
-            style={{ flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#F3F4F6', alignItems: 'center' }}
-          >
-            <Ionicons name="chatbox-ellipses" size={28} color="#EF4444" />
-            <Text style={{ marginTop: 6, fontWeight: '600', color: '#374151', fontSize: 13 }}>Complaints</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('RouteManagement')}
-            style={{ flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#F3F4F6', alignItems: 'center' }}
-          >
-            <Ionicons name="map-outline" size={28} color="#3B82F6" />
-            <Text style={{ marginTop: 6, fontWeight: '600', color: '#374151', fontSize: 13 }}>Routes</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Weekly Log Volume Chart */}
         <View style={{ backgroundColor: '#fff', padding: 16, borderRadius: 24, marginBottom: 16, borderWidth: 1, borderColor: '#F3F4F6' }}>

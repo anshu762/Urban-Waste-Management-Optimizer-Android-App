@@ -185,7 +185,7 @@ const RouteManagementScreen = ({ route, navigation }: any) => {
           data={plansData?.data || []}
           keyExtractor={(item) => item.id}
           renderItem={renderRouteItem}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
           ListEmptyComponent={
             <EmptyState
               emoji="🗺️"

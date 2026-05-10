@@ -16,23 +16,20 @@ import { ComplaintDetailScreen } from '../screens/resident/ComplaintDetailScreen
 import { AddressSetupScreen } from '../screens/onboarding/AddressSetupScreen';
 import { ProfileScreen } from '../screens/resident/ProfileScreen';
 
-const tabIcon = (emoji: string) => ({ color }: { color: string }) => (
-  <Text style={{ color, fontSize: 18 }}>{emoji}</Text>
-);
+import { CustomTabBar } from '../components/navigation/CustomTabBar';
 
 const ResidentTabs = () => (
   <Tab.Navigator
+    tabBar={(props) => <CustomTabBar {...props} />}
     screenOptions={{
       headerShown: false,
-      tabBarActiveTintColor: '#16a34a',
-      tabBarInactiveTintColor: '#9ca3af',
     }}
   >
-    <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarIcon: tabIcon('🏠') }} />
-    <Tab.Screen name="PickupCalendar" component={PickupCalendarScreen} options={{ title: 'Calendar', tabBarIcon: tabIcon('📅') }} />
-    <Tab.Screen name="LogWaste" component={LogWasteScreen} options={{ title: 'Log Waste', tabBarIcon: tabIcon('♻️') }} />
-    <Tab.Screen name="MyReports" component={MyReportsScreen} options={{ title: 'Reports', tabBarIcon: tabIcon('✅') }} />
-    <Tab.Screen name="Notifications" component={NotificationsScreen} options={{ tabBarIcon: tabIcon('🔔') }} />
+    <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
+    <Tab.Screen name="PickupCalendar" component={PickupCalendarScreen} options={{ title: 'Calendar' }} />
+    <Tab.Screen name="LogWaste" component={LogWasteScreen} options={{ title: 'Log' }} />
+    <Tab.Screen name="MyReports" component={MyReportsScreen} options={{ title: 'Reports' }} />
+    <Tab.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Alerts' }} />
   </Tab.Navigator>
 );
 

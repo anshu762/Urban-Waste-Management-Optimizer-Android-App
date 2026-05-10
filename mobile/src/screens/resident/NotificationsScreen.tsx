@@ -64,6 +64,7 @@ export const NotificationsScreen = () => {
       ) : (
         <FlatList
           data={notifications}
+          contentContainerStyle={{ paddingBottom: 120 }}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
