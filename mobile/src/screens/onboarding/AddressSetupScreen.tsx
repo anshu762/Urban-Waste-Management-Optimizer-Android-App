@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppInput } from '../../components/common/AppInput';
-import { AppButton } from '../../components/common/AppButton';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
 import { updateProfileApi } from '../../api/user.api';
 import { getZonesApi } from '../../api/zone.api';
 import { useAuthStore } from '../../stores/auth.store';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { AuthScreen } from '../../components/auth/AuthScreen';
+import { AuthBranding } from '../../components/auth/AuthBranding';
+import { AuthTextField } from '../../components/auth/AuthTextField';
+import { AuthPrimaryButton } from '../../components/auth/AuthPrimaryButton';
+import { tokens } from '../../theme/tokens';
 
 export const AddressSetupScreen = ({ navigation }: any) => {
   const [zones, setZones] = useState<any[]>([]);
@@ -82,43 +84,169 @@ export const AddressSetupScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView contentContainerStyle={{ padding: 24 }}>
-        <View className="mb-6">
-          <Text className="text-3xl font-extrabold text-primary mb-2">Setup Address</Text>
-          <Text className="text-gray-500">We need this to schedule your pickups.</Text>
+    <AuthScreen
+      footer={<AuthPrimaryButton label="COMPLETE SETUP" onPress={handleSubmit} isLoading={isSubmitting} />}
+    >
+      <AuthBranding />
+
+      <View style={styles.formContainer}>
+        <View style={styles.headerTextSection}>
+          <Text style={styles.titleText}>Setup Address</Text>
+          <Text style={styles.subtitleText}>We need this to schedule your pickups.</Text>
         </View>
 
-        {isLoadingZones ? (
-          <ActivityIndicator size="small" color="#16a34a" />
-        ) : (
-          <View className="mb-4">
-            <Text className="text-gray-700 font-medium mb-2">Select Zone</Text>
-            {/* Simple fallback: rendering them as text inputs or buttons. Ideally use a Picker */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row mb-4">
-              {zones.map((z) => (
-                <Text 
-                  key={z.id} 
-                  onPress={() => setSelectedZoneId(z.id)}
-                  className={`px-4 py-2 border rounded-full mr-2 overflow-hidden ${selectedZoneId === z.id ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300'}`}
-                >
-                  {z.zoneName}
-                </Text>
-              ))}
+        <View style={styles.zoneSection}>
+          <Text style={styles.zoneLabel}>SELECT ZONE</Text>
+
+          {isLoadingZones ? (
+            <View style={styles.zoneLoadingRow}>
+              <ActivityIndicator size="small" color={tokens.colors.brand} />
+              <Text style={styles.zoneLoadingText}>Loading zones…</Text>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.zoneScroll}>
+              {zones.map((z) => {
+                const selected = selectedZoneId === z.id;
+                return (
+                  <TouchableOpacity
+                    key={z.id}
+                    onPress={() => setSelectedZoneId(z.id)}
+                    style={[styles.zonePill, selected && styles.zonePillActive]}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.zoneText, selected && styles.zoneTextActive]}>{z.zoneName}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
-          </View>
-        )}
-
-        <AppInput label="Building Name" placeholder="e.g. Green Valley Apts" value={buildingName} onChangeText={setBuildingName} />
-        <AppInput label="Block / Wing" placeholder="e.g. Block A" value={block} onChangeText={setBlock} />
-        <AppInput label="House/Flat Number" placeholder="e.g. 101" value={houseNumber} onChangeText={setHouseNumber} />
-        <AppInput label="Street" placeholder="e.g. Main Street" value={street} onChangeText={setStreet} />
-        <AppInput label="Landmark" placeholder="e.g. Near City Park" value={landmark} onChangeText={setLandmark} />
-
-        <View className="mt-6">
-          <AppButton title="Complete Setup" onPress={handleSubmit} isLoading={isSubmitting} />
+          )}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+
+        <AuthTextField
+          label="BUILDING NAME"
+          leftIcon="business-outline"
+          placeholder="e.g. Green Valley Apts"
+          value={buildingName}
+          onChangeText={setBuildingName}
+        />
+
+        <View style={{ marginTop: 16 }}>
+          <AuthTextField
+            label="BLOCK / WING"
+            leftIcon="grid-outline"
+            placeholder="e.g. Block A"
+            value={block}
+            onChangeText={setBlock}
+          />
+        </View>
+
+        <View style={{ marginTop: 16 }}>
+          <AuthTextField
+            label="HOUSE / FLAT NUMBER"
+            leftIcon="home-outline"
+            placeholder="e.g. 101"
+            value={houseNumber}
+            onChangeText={setHouseNumber}
+          />
+        </View>
+
+        <View style={{ marginTop: 16 }}>
+          <AuthTextField
+            label="STREET"
+            leftIcon="navigate-outline"
+            placeholder="e.g. Main Street"
+            value={street}
+            onChangeText={setStreet}
+          />
+        </View>
+
+        <View style={{ marginTop: 16 }}>
+          <AuthTextField
+            label="LANDMARK"
+            leftIcon="pin-outline"
+            placeholder="e.g. Near City Park"
+            value={landmark}
+            onChangeText={setLandmark}
+          />
+        </View>
+
+        <Text style={styles.helperText}>You can update these details later from your profile.</Text>
+      </View>
+    </AuthScreen>
   );
 };
+
+const styles = StyleSheet.create({
+  formContainer: {
+    width: '100%',
+  },
+  headerTextSection: {
+    marginBottom: 18,
+  },
+  titleText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: tokens.colors.text,
+  },
+  subtitleText: {
+    fontSize: 13,
+    color: tokens.colors.textMuted,
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  zoneSection: {
+    marginBottom: 14,
+  },
+  zoneLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: tokens.colors.textSubtle,
+    letterSpacing: 1,
+    marginBottom: 10,
+    marginLeft: 4,
+  },
+  zoneLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  zoneLoadingText: {
+    marginLeft: 10,
+    fontSize: 12,
+    fontWeight: '600',
+    color: tokens.colors.textMuted,
+  },
+  zoneScroll: {
+    paddingLeft: 2,
+    paddingRight: 8,
+    paddingVertical: 2,
+  },
+  zonePill: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: tokens.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: 'rgba(15, 23, 42, 0.10)',
+    marginRight: 10,
+  },
+  zonePillActive: {
+    backgroundColor: tokens.colors.text,
+    borderColor: tokens.colors.text,
+  },
+  zoneText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: tokens.colors.textMuted,
+  },
+  zoneTextActive: {
+    color: tokens.colors.surface,
+  },
+  helperText: {
+    fontSize: 12,
+    color: tokens.colors.textSubtle,
+    fontWeight: '600',
+    marginTop: 14,
+    marginLeft: 4,
+  },
+});

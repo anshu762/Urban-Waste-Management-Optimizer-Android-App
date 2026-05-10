@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppInput } from '../../components/common/AppInput';
-import { AppButton } from '../../components/common/AppButton';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { loginApi } from '../../api/auth.api';
 import { useAuthStore } from '../../stores/auth.store';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { tokens } from '../../theme/tokens';
+import { AuthScreen } from '../../components/auth/AuthScreen';
+import { AuthBranding } from '../../components/auth/AuthBranding';
+import { AuthTextField } from '../../components/auth/AuthTextField';
+import { AuthPrimaryButton } from '../../components/auth/AuthPrimaryButton';
 
 export const LoginScreen = ({ navigation }: any) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  
   const setAuth = useAuthStore((state) => state.setAuth);
   const { showError, showSuccess } = useErrorHandler();
 
@@ -22,7 +26,6 @@ export const LoginScreen = ({ navigation }: any) => {
 
     setIsLoading(true);
     try {
-      // Very basic check to determine if it's an email or mobile
       const isEmail = identifier.includes('@');
       const payload = isEmail ? { email: identifier, password } : { mobile: identifier, password };
       
@@ -39,50 +42,92 @@ export const LoginScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
-          <View className="mb-8">
-            <Text className="text-4xl font-extrabold text-primary mb-2">Welcome Back</Text>
-            <Text className="text-gray-500 text-base">Sign in to manage your waste sustainably.</Text>
-          </View>
+    <AuthScreen>
+      <AuthBranding />
 
-          <AppInput
-            label="Email or Mobile"
-            placeholder="Enter your email or mobile number"
-            value={identifier}
-            onChangeText={setIdentifier}
-            keyboardType="default"
-            autoCapitalize="none"
-          />
+      <View style={styles.formContainer}>
+        <View style={styles.headerTextSection}>
+          <Text style={styles.titleText}>Welcome Back</Text>
+          <Text style={styles.subtitleText}>Sign in to continue to your dashboard</Text>
+        </View>
 
-          <AppInput
-            label="Password"
-            placeholder="Enter your password"
+        <AuthTextField
+          label="IDENTIFIER (EMAIL OR MOBILE)"
+          leftIcon="mail-outline"
+          placeholder="Enter email or mobile"
+          value={identifier}
+          onChangeText={setIdentifier}
+          autoCapitalize="none"
+        />
+
+        <View style={{ marginTop: 20 }}>
+          <AuthTextField
+            label="SECURE PASSWORD"
+            leftIcon="lock-closed-outline"
+            placeholder="••••••••"
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
+            secureTextEntry={!showPassword}
+            rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+            onPressRightIcon={() => setShowPassword(!showPassword)}
           />
+        </View>
 
-          <View className="mt-4">
-            <AppButton
-              title="Sign In"
-              onPress={handleLogin}
-              isLoading={isLoading}
-            />
-          </View>
+        <Text style={styles.helperText}>Use your email or mobile number to log in.</Text>
 
-          <View className="flex-row justify-center mt-6">
-            <Text className="text-gray-600">Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text className="text-primary font-bold">Sign Up</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        <View style={{ marginTop: 16 }}>
+          <AuthPrimaryButton label="SIGN IN" onPress={handleLogin} isLoading={isLoading} />
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Don't have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.signUpLink}>Create Account</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </AuthScreen>
   );
 };
+
+const styles = StyleSheet.create({
+  formContainer: {
+    width: '100%',
+  },
+  headerTextSection: {
+    marginBottom: 24,
+  },
+  titleText: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: tokens.colors.text,
+  },
+  subtitleText: {
+    fontSize: 14,
+    color: tokens.colors.textMuted,
+    marginTop: 6,
+    fontWeight: '500',
+  },
+  helperText: {
+    fontSize: 12,
+    color: tokens.colors.textSubtle,
+    fontWeight: '600',
+    marginTop: 14,
+    marginLeft: 4,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 26,
+  },
+  footerText: {
+    fontSize: 14,
+    color: tokens.colors.textMuted,
+    fontWeight: '500',
+  },
+  signUpLink: {
+    fontSize: 14,
+    color: tokens.colors.brand,
+    fontWeight: '800',
+  },
+});

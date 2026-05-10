@@ -37,13 +37,13 @@ export const RootNavigator = () => {
     // Role based navigation
     switch (user.role) {
       case 'ADMIN':
-        return <AdminStack />;
+        return <AdminStack key={`admin-${user.id}`} />;
       case 'DRIVER':
-        return <DriverStack />;
+        return <DriverStack key={`driver-${user.id}`} />;
       case 'RESIDENT':
-        return <ResidentStack />;
+        return <ResidentStack key={`resident-${user.id}-${onboardingComplete}-${isProfileComplete}`} />;
       default:
-        return <ResidentStack />;
+        return <ResidentStack key={`resident-${user.id}-${onboardingComplete}-${isProfileComplete}`} />;
     }
   };
 
