@@ -1,20 +1,19 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Animated, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Animated, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { analyticsApi } from '../../../api/analytics.api';
-import Svg, { Line, Circle, Polyline, Text as SvgText } from 'react-native-svg';
+import Svg, { Line, Circle, Polyline } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-type RootStackParamList = {
-  ComplianceTrend: { zoneId: string };
-};
+const { width } = Dimensions.get('window');
 
-type Props = NativeStackScreenProps<RootStackParamList, 'ComplianceTrend'>;
-
-export const ComplianceTrendScreen: React.FC<any> = ({ route }) => {
+export const ComplianceTrendScreen = ({ route }: any) => {
   const { zoneId } = route.params;
+  const navigation = useNavigation();
 
-  const { data: trend, isLoading } = useQuery({
+  const { data: trend, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['complianceTrend', zoneId],
     queryFn: () => analyticsApi.getComplianceTrend(zoneId),
   });
@@ -37,29 +36,26 @@ export const ComplianceTrendScreen: React.FC<any> = ({ route }) => {
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
-        <Text style={styles.loadingText}>Analyzing Compliance Data...</Text>
-      </View>
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator size="large" color="#10B981" />
+        <Text style={styles.loadingText}>Analyzing segregation accuracy...</Text>
+      </SafeAreaView>
     );
   }
 
-  const screenWidth = Dimensions.get('window').width;
-  const chartWidth = screenWidth - 64; // Padding
-  const chartHeight = 150;
+  const chartWidth = width - 72; // Adjusted padding
+  const chartHeight = 160;
 
   const arrowRotation = arrowAnim.interpolate({
     inputRange: [0, 90, 180],
     outputRange: ['0deg', '90deg', '180deg']
   });
 
-  const arrowColor = trend?.trend === 'IMPROVING' ? '#22c55e' : 
-                     trend?.trend === 'DECLINING' ? '#ef4444' : '#9ca3af';
+  const arrowColor = trend?.trend === 'IMPROVING' ? '#10B981' : 
+                     trend?.trend === 'DECLINING' ? '#EF4444' : '#64748B';
 
-  // SVG Chart Calculation
   const history = trend?.history || [0, 0, 0, 0];
   const maxVal = 100;
-  
   const points = history.map((val, idx) => {
     const x = (idx / (history.length - 1)) * chartWidth;
     const y = chartHeight - ((val / maxVal) * chartHeight);
@@ -69,116 +65,314 @@ export const ComplianceTrendScreen: React.FC<any> = ({ route }) => {
   const polylinePoints = points.map(p => `${p.x},${p.y}`).join(' ');
 
   return (
-    <ScrollView className="flex-1 bg-gray-50 p-4">
-      <Text className="text-2xl font-bold text-gray-800 mb-6">Segregation Compliance</Text>
-
-      {/* Big Trend Display */}
-      <View className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 items-center">
-        <Animated.Text style={{ fontSize: 60, color: arrowColor, transform: [{ rotate: arrowRotation }] }}>
-          ↑
-        </Animated.Text>
-        
-        <View className="flex-row justify-around w-full mt-4">
-          <View className="items-center">
-            <Text className="text-gray-500 text-sm font-bold">LAST WEEK</Text>
-            <Text className="text-3xl font-black text-gray-700">{trend?.lastWeekRate}%</Text>
-          </View>
-          <View className="w-[1px] bg-gray-200" />
-          <View className="items-center">
-            <Text className="text-gray-500 text-sm font-bold">THIS WEEK</Text>
-            <Text className={`text-3xl font-black ${
-              trend?.trend === 'IMPROVING' ? 'text-green-600' :
-              trend?.trend === 'DECLINING' ? 'text-red-600' : 'text-gray-700'
-            }`}>{trend?.thisWeekRate}%</Text>
-          </View>
-        </View>
-
-        <View className={`mt-6 px-4 py-2 rounded-full ${
-          trend?.trend === 'IMPROVING' ? 'bg-green-100' :
-          trend?.trend === 'DECLINING' ? 'bg-red-100' : 'bg-gray-100'
-        }`}>
-          <Text className={`font-bold ${
-            trend?.trend === 'IMPROVING' ? 'text-green-800' :
-            trend?.trend === 'DECLINING' ? 'text-red-800' : 'text-gray-800'
-          }`}>
-            {trend?.changePercent !== undefined && trend.changePercent > 0 ? '+' : ''}
-            {trend?.changePercent}% {trend?.trend === 'IMPROVING' ? 'improvement 🎉' : 
-                                     trend?.trend === 'DECLINING' ? 'decline' : 'change'}
-          </Text>
-        </View>
+    <SafeAreaView style={styles.container}>
+      {/* Premium Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={20} color="#0F172A" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Compliance Trends</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => refetch()} disabled={isFetching}>
+          {isFetching ? (
+            <ActivityIndicator size="small" color="#0F172A" />
+          ) : (
+            <Ionicons name="refresh-outline" size={18} color="#0F172A" />
+          )}
+        </TouchableOpacity>
       </View>
 
-      {/* SVG Line Chart */}
-      <View className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
-        <Text className="text-sm font-bold text-gray-500 mb-4">4-WEEK COMPLIANCE TREND</Text>
-        
-        <View style={{ height: chartHeight + 20, width: chartWidth }}>
-          <Svg height={chartHeight} width={chartWidth}>
-            {/* Grid lines */}
-            {[0, 25, 50, 75, 100].map(v => (
-              <Line 
-                key={v}
-                x1="0" 
-                y1={chartHeight - (v / 100) * chartHeight} 
-                x2={chartWidth} 
-                y2={chartHeight - (v / 100) * chartHeight} 
-                stroke="#f3f4f6" 
-                strokeWidth="1" 
-              />
-            ))}
-            
-            {/* The line */}
-            <Polyline
-              points={polylinePoints}
-              fill="none"
-              stroke="#3b82f6"
-              strokeWidth="3"
-            />
-            
-            {/* The dots */}
-            {points.map((p, i) => (
-              <Circle
-                key={`p-${i}`}
-                cx={p.x}
-                cy={p.y}
-                r="4"
-                fill="#fff"
-                stroke="#3b82f6"
-                strokeWidth="2"
-              />
-            ))}
-          </Svg>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Main Performance Card */}
+        <View style={styles.heroCard}>
+          <View style={styles.trendIconContainer}>
+            <Animated.View style={{ transform: [{ rotate: arrowRotation }] }}>
+              <Ionicons name="arrow-up" size={48} color={arrowColor} />
+            </Animated.View>
+          </View>
           
-          {/* X-axis labels */}
-          <View className="flex-row justify-between mt-2">
-            <Text className="text-xs text-gray-400">Week 1</Text>
-            <Text className="text-xs text-gray-400">Week 2</Text>
-            <Text className="text-xs text-gray-400">Last Wk</Text>
-            <Text className="text-xs text-blue-500 font-bold">This Wk</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>LAST WEEK</Text>
+              <Text style={styles.statValueSmall}>{trend?.lastWeekRate}%</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>THIS WEEK</Text>
+              <Text style={[styles.statValueLarge, { color: arrowColor }]}>{trend?.thisWeekRate}%</Text>
+            </View>
           </View>
-        </View>
-      </View>
 
-      {/* Insight Card */}
-      <View className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-8">
-        <Text className="text-lg font-bold text-gray-800 mb-2">AI Insight</Text>
-        <Text className="text-gray-700 leading-6">{trend?.insight}</Text>
-        
-        {trend?.trend === 'DECLINING' && (
-          <View className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-            <Text className="text-yellow-800 text-sm">
-              <Text className="font-bold">💡 Tip:</Text> Send a reminder notification to residents about proper segregation. Go to "Inactive Users" to identify who might need a nudge.
+          <View style={[styles.changeBadge, {
+            backgroundColor: trend?.trend === 'IMPROVING' ? '#ECFDF5' :
+                             trend?.trend === 'DECLINING' ? '#FEF2F2' : '#F8FAFC'
+          }]}>
+            <Text style={[styles.changeText, {
+              color: trend?.trend === 'IMPROVING' ? '#065F46' :
+                     trend?.trend === 'DECLINING' ? '#991B1B' : '#475569'
+            }]}>
+              {trend?.changePercent !== undefined && trend.changePercent > 0 ? '+' : ''}
+              {trend?.changePercent}% {trend?.trend === 'IMPROVING' ? 'Improvement' : 
+                                       trend?.trend === 'DECLINING' ? 'Decline' : 'Stability'}
             </Text>
           </View>
-        )}
-      </View>
-    </ScrollView>
+        </View>
+
+        {/* Data Visualization Section */}
+        <Text style={styles.sectionTitle}>4-Week Performance</Text>
+        <View style={styles.chartCard}>
+          <View style={{ height: chartHeight + 40 }}>
+            <Svg height={chartHeight} width={chartWidth}>
+              {[0, 25, 50, 75, 100].map(v => (
+                <Line 
+                  key={v}
+                  x1="0" 
+                  y1={chartHeight - (v / 100) * chartHeight} 
+                  x2={chartWidth} 
+                  y2={chartHeight - (v / 100) * chartHeight} 
+                  stroke="#F1F5F9" 
+                  strokeWidth="1" 
+                />
+              ))}
+              <Polyline
+                points={polylinePoints}
+                fill="none"
+                stroke="#3B82F6"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {points.map((p, i) => (
+                <Circle
+                  key={`p-${i}`}
+                  cx={p.x}
+                  cy={p.y}
+                  r="5"
+                  fill="#FFFFFF"
+                  stroke="#3B82F6"
+                  strokeWidth="3"
+                />
+              ))}
+            </Svg>
+            <View style={styles.xAxis}>
+              <Text style={styles.axisText}>Week 1</Text>
+              <Text style={styles.axisText}>Week 2</Text>
+              <Text style={styles.axisText}>Last Wk</Text>
+              <Text style={[styles.axisText, { color: '#3B82F6', fontWeight: '800' }]}>Today</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* AI Insight Section */}
+        <Text style={styles.sectionTitle}>AI Insight Dashboard</Text>
+        <View style={styles.insightCard}>
+          <View style={styles.insightHeader}>
+            <View style={styles.aiIconBox}>
+              <Ionicons name="sparkles" size={16} color="#8B5CF6" />
+            </View>
+            <Text style={styles.insightTitle}>Pattern Analysis</Text>
+          </View>
+          <Text style={styles.insightBody}>{trend?.insight}</Text>
+          
+          {trend?.trend === 'DECLINING' && (
+            <View style={styles.recommendationBox}>
+              <Ionicons name="bulb" size={16} color="#D97706" />
+              <Text style={styles.recommendationText}>
+                Identify residents in this zone who haven't logged waste recently. A targeted reminder often boosts compliance.
+              </Text>
+            </View>
+          )}
+        </View>
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb' },
-  loadingText: { marginTop: 12, color: '#4b5563', fontSize: 16 }
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  loadingText: {
+    marginTop: 12,
+    color: '#64748B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  heroCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 4,
+    marginBottom: 24,
+  },
+  trendIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 20,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  statValueSmall: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  statValueLarge: {
+    fontSize: 32,
+    fontWeight: '900',
+  },
+  divider: {
+    width: 1,
+    height: '100%',
+    backgroundColor: '#F1F5F9',
+  },
+  changeBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  changeText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
+  },
+  chartCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    marginBottom: 24,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.02,
+    elevation: 1,
+  },
+  xAxis: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  axisText: {
+    fontSize: 10,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  insightCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    marginBottom: 24,
+  },
+  insightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  aiIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#F5F3FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  insightTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  insightBody: {
+    fontSize: 14,
+    color: '#475569',
+    lineHeight: 22,
+  },
+  recommendationBox: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#FFFBEB',
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recommendationText: {
+    fontSize: 11,
+    color: '#92400E',
+    fontWeight: '600',
+    marginLeft: 8,
+    flex: 1,
+    lineHeight: 16,
+  },
 });
 
 export default ComplianceTrendScreen;
