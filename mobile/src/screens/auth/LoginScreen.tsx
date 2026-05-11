@@ -32,7 +32,7 @@ export const LoginScreen = ({ navigation }: any) => {
       const response = await loginApi(payload);
       if (response.success && response.data) {
         setAuth(response.data.user, response.data.token);
-        showSuccess('Welcome back!', 'Login successful');
+        showSuccess('Welcome back!');
       }
     } catch (error: any) {
       showError(error);

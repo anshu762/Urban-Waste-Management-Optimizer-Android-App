@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
+import { premiumToastConfig } from './src/components/common/PremiumToast';
 import './global.css'; // Assuming NativeWind v4 requires global CSS injection if configured this way, or we just rely on the preset.
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
@@ -40,7 +41,7 @@ export default function App() {
           <AppBootstrap />
           <StatusBar style="auto" />
         </NavigationContainer>
-        <Toast />
+        <Toast config={premiumToastConfig} />
       </QueryClientProvider>
     </SafeAreaProvider>
   );
