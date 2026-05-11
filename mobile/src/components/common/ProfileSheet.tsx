@@ -4,14 +4,28 @@ import { Ionicons } from '@expo/vector-icons';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+type IonName = React.ComponentProps<typeof Ionicons>['name'];
+
 interface ProfileSheetProps {
   visible: boolean;
   user: any;
   onClose: () => void;
   onLogout: () => void;
+  /** Shown in the role pill under the name (e.g. RESIDENT vs SYSTEM ADMINISTRATOR). */
+  roleBadgeText?: string;
+  roleBadgeIcon?: IonName;
+  onPersonalInfoPress?: () => void;
 }
 
-export const ProfileSheet: React.FC<ProfileSheetProps> = ({ visible, user, onClose, onLogout }) => {
+export const ProfileSheet: React.FC<ProfileSheetProps> = ({
+  visible,
+  user,
+  onClose,
+  onLogout,
+  roleBadgeText = 'SYSTEM ADMINISTRATOR',
+  roleBadgeIcon = 'shield-checkmark',
+  onPersonalInfoPress,
+}) => {
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -134,8 +148,8 @@ export const ProfileSheet: React.FC<ProfileSheetProps> = ({ visible, user, onClo
             <View style={styles.headerInfo}>
               <Text style={styles.userName}>{user?.fullName || 'Administrator'}</Text>
               <View style={styles.roleBadge}>
-                <Ionicons name="shield-checkmark" size={10} color="#10B981" />
-                <Text style={styles.roleText}>SYSTEM ADMINISTRATOR</Text>
+                <Ionicons name={roleBadgeIcon} size={10} color="#10B981" />
+                <Text style={styles.roleText}>{roleBadgeText}</Text>
               </View>
             </View>
           </View>
@@ -148,7 +162,7 @@ export const ProfileSheet: React.FC<ProfileSheetProps> = ({ visible, user, onClo
               icon="person-outline" 
               title="Personal Information" 
               subtitle="Manage your profile and bio" 
-              onPress={() => {}}
+              onPress={() => onPersonalInfoPress?.()}
             />
             <ProfileAction 
               icon="settings-outline" 

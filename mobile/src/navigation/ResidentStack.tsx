@@ -29,13 +29,17 @@ const ResidentTabs = () => (
     <Tab.Screen name="PickupCalendar" component={PickupCalendarScreen} options={{ title: 'Calendar' }} />
     <Tab.Screen name="LogWaste" component={LogWasteScreen} options={{ title: 'Log' }} />
     <Tab.Screen name="MyReports" component={MyReportsScreen} options={{ title: 'Reports' }} />
-    <Tab.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Alerts' }} />
   </Tab.Navigator>
 );
 
 export const ResidentStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="ResidentTabs" component={ResidentTabs} />
+    <Stack.Screen
+      name="Notifications"
+      component={NotificationsScreen}
+      options={{ headerShown: true, title: 'Alerts', headerBackTitle: 'Back' }}
+    />
     <Stack.Screen name="AddressSetup" component={AddressSetupScreen} options={{ headerShown: true, title: 'Update Profile & Zone' }} />
     <Stack.Screen name="ReportMissedPickup" component={ReportMissedPickupScreen} options={{ headerShown: true, title: 'Report Missed Pickup' }} />
     <Stack.Screen name="ComplaintDetail" component={ComplaintDetailScreen} options={{ headerShown: true, title: 'Report Details' }} />

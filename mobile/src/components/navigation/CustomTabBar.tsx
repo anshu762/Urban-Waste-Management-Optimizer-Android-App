@@ -18,7 +18,6 @@ const ICON_MAPPING: Record<string, keyof typeof Ionicons.glyphMap> = {
   PickupCalendar: 'calendar-outline',
   LogWaste: 'leaf-outline',
   MyReports: 'document-text-outline',
-  Notifications: 'notifications-outline',
 };
 
 const ACTIVE_ICON_MAPPING: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -35,7 +34,6 @@ const ACTIVE_ICON_MAPPING: Record<string, keyof typeof Ionicons.glyphMap> = {
   PickupCalendar: 'calendar',
   LogWaste: 'leaf',
   MyReports: 'document-text',
-  Notifications: 'notifications',
 };
 
 export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {

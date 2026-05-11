@@ -46,11 +46,7 @@ export const NotificationsScreen = () => {
   const notifications = data?.data?.notifications || [];
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="px-4 py-4 border-b border-gray-100">
-        <Text className="text-xl font-bold text-gray-900">Notifications</Text>
-      </View>
-
+    <SafeAreaView className="flex-1 bg-white" edges={['bottom']}>
       {isLoading && page === 1 ? (
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#10b981" />
@@ -64,7 +60,7 @@ export const NotificationsScreen = () => {
       ) : (
         <FlatList
           data={notifications}
-          contentContainerStyle={{ paddingBottom: 120 }}
+          contentContainerStyle={{ paddingBottom: 32 }}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
