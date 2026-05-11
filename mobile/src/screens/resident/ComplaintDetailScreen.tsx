@@ -102,7 +102,7 @@ export const ComplaintDetailScreen = () => {
             <Text style={styles.headerTitle}>Report details</Text>
             <Text style={styles.headerSub}>ID: #{String(complaint.id || '').slice(-8).toUpperCase()}</Text>
           </View>
-          <View style={{ width: 40 }}>
+          <View style={styles.statusSlot}>
             <StatusBadge status={status} />
           </View>
         </View>
@@ -202,6 +202,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: '900', color: '#0F172A' },
   headerSub: { fontSize: 12, fontWeight: '700', color: '#94A3B8', marginTop: 2 },
+  statusSlot: { minWidth: 88, alignItems: 'flex-end', flexShrink: 0 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 24,
@@ -241,4 +242,3 @@ const styles = StyleSheet.create({
   errorTitle: { fontSize: 18, fontWeight: '900', color: '#0F172A' },
   errorSub: { marginTop: 6, fontSize: 13, color: '#64748B', fontWeight: '600', textAlign: 'center' },
 });
-

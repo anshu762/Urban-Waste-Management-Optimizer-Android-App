@@ -17,7 +17,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 
   return (
     <View className={`px-2 py-1 rounded-full self-start ${config.bg}`}>
-      <Text className={`text-xs font-semibold ${config.text}`}>
+      <Text className={`text-xs font-semibold ${config.text}`} numberOfLines={1}>
         {config.label}
       </Text>
     </View>
