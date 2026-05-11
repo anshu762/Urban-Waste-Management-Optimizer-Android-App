@@ -2,14 +2,22 @@ import React, { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
+import { premiumToastConfig } from './src/components/common/PremiumToast';
 import './global.css'; // Assuming NativeWind v4 requires global CSS injection if configured this way, or we just rely on the preset.
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { useAuthStore } from './src/stores/auth.store';
+import { queryClient } from './src/lib/queryClient';
+import { usePushNotifications } from './src/hooks/usePushNotifications';
 
-const queryClient = new QueryClient();
+const AppBootstrap = () => {
+  usePushNotifications();
+  return <RootNavigator />;
+};
+
+
 
 export default function App() {
   const { isLoading, loadFromStorage } = useAuthStore();
@@ -30,10 +38,10 @@ export default function App() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <NavigationContainer>
-          <RootNavigator />
+          <AppBootstrap />
           <StatusBar style="auto" />
         </NavigationContainer>
-        <Toast />
+        <Toast config={premiumToastConfig} />
       </QueryClientProvider>
     </SafeAreaProvider>
   );

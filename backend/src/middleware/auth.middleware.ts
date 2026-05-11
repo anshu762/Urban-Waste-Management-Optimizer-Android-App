@@ -17,8 +17,8 @@ declare global {
 export const authenticate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      errorResponse(res, 'Unauthorized - No token provided', 401);
+    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+      errorResponse(res, 'Unauthorized - No valid token provided', 401);
       return;
     }
 

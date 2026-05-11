@@ -55,6 +55,7 @@ model User {
   mobile           String?         @unique
   email            String?         @unique
   passwordHash     String?
+  pushToken        String?
   role             UserRole        @default(RESIDENT)
   isActive         Boolean         @default(true)
   createdAt        DateTime        @default(now())

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, FlatList, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, FlatList, Modal, Alert, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoutePlanById, useAssignRoute } from '../../hooks/useRoutes';
 import { useVehicles } from '../../hooks/useVehicles';
@@ -7,14 +7,21 @@ import { getDriversApi } from '../../api/user.api';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
+import { EmptyState } from '../../components/common/EmptyState';
+import { FullScreenError } from '../../components/common/FullScreenError';
+import { parseError } from '../../lib/error-parser';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+
+const { width, height } = Dimensions.get('window');
 
 const RouteDetailScreen = ({ route, navigation }: any) => {
   const { routeId } = route.params;
-  const { data: planData, isLoading, refetch } = useRoutePlanById(routeId);
-  const { data: vehiclesData } = useVehicles();
+  const { showError, showSuccess } = useErrorHandler();
+  const { data: planData, isLoading, isError, error, refetch } = useRoutePlanById(routeId);
+  const { data: vehiclesData, isError: vehiclesError, error: vehiclesErr, refetch: refetchVehicles } = useVehicles();
   const assignRoute = useAssignRoute();
 
-  const { data: driversData, isLoading: driversLoading } = useQuery({
+  const { data: driversData, isLoading: driversLoading, isError: driversError, error: driversErr, refetch: refetchDrivers } = useQuery({
     queryKey: ['drivers'],
     queryFn: getDriversApi,
   });
@@ -25,10 +32,15 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#059669" />
-      </View>
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator size="large" color="#10B981" />
+        <Text style={styles.loadingText}>Syncing mission details...</Text>
+      </SafeAreaView>
     );
+  }
+
+  if (isError) {
+    return <FullScreenError error={parseError(error)} onRetry={refetch} />;
   }
 
   const plan = planData?.data;
@@ -48,179 +60,226 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
           vehicleId: selectedVehicleId,
         }
       });
-      Alert.alert('Success', 'Route assigned successfully!');
+      showSuccess('Route assigned successfully!');
       setModalVisible(false);
       refetch();
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to assign route');
+    } catch (err: any) {
+      showError(err);
     }
   };
 
-  const renderStopItem = ({ item }: any) => {
+  const renderStopItem = (item: any, isLast: boolean) => {
     const resident = item.residentProfile;
-    const address = `${resident.houseNumber || ''}, ${resident.buildingName || ''}, ${resident.block || ''}, ${resident.street || ''}`;
+    const address = `${resident.houseNumber || ''}, ${resident.buildingName || ''}, ${resident.block || ''}`;
     
     return (
-      <View className="bg-white p-4 rounded-2xl mb-4 border border-gray-100 shadow-sm">
-        <View className="flex-row items-start mb-3">
-          <View className="w-10 h-10 rounded-full bg-emerald-100 items-center justify-center mr-3">
-            <Text className="text-emerald-700 font-bold text-lg">{item.stopOrder}</Text>
+      <View key={item.id} style={styles.timelineItem}>
+        <View style={styles.timelineLeft}>
+          <View style={[styles.orderCircle, { backgroundColor: item.stopStatus === 'COMPLETED' ? '#10B981' : '#F1F5F9' }]}>
+            {item.stopStatus === 'COMPLETED' ? (
+              <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+            ) : (
+              <Text style={styles.orderText}>{item.stopOrder}</Text>
+            )}
           </View>
-          <View className="flex-1">
-            <View className="flex-row justify-between items-center mb-1">
-              <Text className="text-gray-900 font-extrabold text-lg">{resident.user?.fullName}</Text>
-              <View className={`px-2 py-1 rounded-md ${item.stopStatus === 'COMPLETED' ? 'bg-green-100' : 'bg-orange-50'}`}>
-                <Text className={`text-[10px] font-bold ${item.stopStatus === 'COMPLETED' ? 'text-green-700' : 'text-orange-700'}`}>
-                  {item.stopStatus}
-                </Text>
-              </View>
-            </View>
-            <View className="flex-row items-center">
-               <Ionicons name="location-outline" size={14} color="#6B7280" />
-               <Text className="text-gray-500 text-xs ml-1" numberOfLines={2}>{address}</Text>
-            </View>
-          </View>
+          {!isLast && <View style={styles.timelineLine} />}
         </View>
 
-        <View className="flex-row justify-between items-center border-t border-gray-50 pt-3">
-           <View className="flex-row items-center">
-              <View className="bg-gray-100 px-2 py-1 rounded-md mr-2">
-                <Text className="text-[10px] font-bold text-gray-500">Prio: {item.priorityScore}</Text>
+        <View style={styles.stopCard}>
+          <View style={styles.stopHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.residentName}>{resident.user?.fullName}</Text>
+              <View style={styles.addressRow}>
+                <Ionicons name="location-outline" size={12} color="#94A3B8" />
+                <Text style={styles.addressText} numberOfLines={1}>{address}</Text>
               </View>
-              {resident.landmark && (
-                <Text className="text-[10px] text-gray-400">Near {resident.landmark}</Text>
-              )}
-           </View>
-           <TouchableOpacity className="bg-emerald-50 px-3 py-1.5 rounded-lg flex-row items-center">
-              <Ionicons name="call-outline" size={12} color="#059669" />
-              <Text className="text-emerald-700 text-xs font-bold ml-1">Contact</Text>
-           </TouchableOpacity>
+            </View>
+            <View style={[styles.stopStatusBadge, { backgroundColor: item.stopStatus === 'COMPLETED' ? '#ECFDF5' : '#FFFBEB' }]}>
+              <Text style={[styles.stopStatusText, { color: item.stopStatus === 'COMPLETED' ? '#059669' : '#D97706' }]}>
+                {item.stopStatus}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.stopFooter}>
+            <View style={styles.prioBadge}>
+              <Text style={styles.prioText}>Prio: {item.priorityScore}</Text>
+            </View>
+            <TouchableOpacity style={styles.contactBtn}>
+              <Ionicons name="call" size={12} color="#10B981" />
+              <Text style={styles.contactBtnText}>CONTACT</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
   };
 
+  const getStatusStep = (status: string) => {
+    if (status === 'DRAFT') return 1;
+    if (status === 'ASSIGNED') return 2;
+    if (status === 'IN_PROGRESS') return 3;
+    if (status === 'COMPLETED') return 4;
+    return 1;
+  };
+
+  const currentStep = getStatusStep(plan?.status);
+
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="px-4 py-4 bg-white border-b border-gray-100 flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-            <Ionicons name="arrow-back" size={24} color="#374151" />
-          </TouchableOpacity>
-          <View>
-            <Text className="text-xl font-bold text-gray-800">Route Details</Text>
-            <Text className="text-gray-500 text-xs">#{plan?.id.slice(-8).toUpperCase()}</Text>
-          </View>
+    <SafeAreaView style={styles.container}>
+      {/* Premium Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={20} color="#0F172A" />
+        </TouchableOpacity>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={styles.headerTitle}>Mission Details</Text>
+          <Text style={styles.headerSubtitle}>#{plan?.id.slice(-8).toUpperCase()}</Text>
         </View>
-        
-        {plan?.status === 'DRAFT' && (
-          <TouchableOpacity 
-            onPress={() => setModalVisible(true)}
-            className="bg-emerald-600 px-4 py-2 rounded-xl"
-          >
-            <Text className="text-white font-bold text-sm">Assign Driver</Text>
-          </TouchableOpacity>
-        )}
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
-        {/* Info Card */}
-        <View className="bg-emerald-600 p-6 rounded-3xl shadow-md mb-6">
-          <View className="flex-row justify-between items-start mb-4">
-            <View>
-              <Text className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1">Route Date</Text>
-              <Text className="text-white text-lg font-bold">{format(new Date(plan?.routeDate), 'PPP')}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Status Tracker */}
+        <View style={styles.trackerContainer}>
+          <View style={styles.trackerLine}>
+            <View style={[styles.trackerFill, { width: `${(currentStep - 1) * 33.3}%` }]} />
+          </View>
+          <View style={styles.trackerSteps}>
+            {['Draft', 'Assigned', 'Active', 'Done'].map((s, i) => (
+              <View key={s} style={styles.stepItem}>
+                <View style={[
+                  styles.stepDot, 
+                  currentStep > i && styles.activeStepDot,
+                  currentStep === i + 1 && styles.currentStepDot
+                ]} />
+                <Text style={[styles.stepLabel, currentStep > i && styles.activeStepLabel]}>{s}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Hero Logistics Card */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroRow}>
+            <View style={styles.heroMain}>
+              <Text style={styles.heroLabel}>DATE</Text>
+              <Text style={styles.heroValue}>{format(new Date(plan?.routeDate), 'dd MMM yyyy')}</Text>
             </View>
-            <View className="bg-white/20 px-3 py-1 rounded-full">
-              <Text className="text-white text-xs font-bold">{plan?.status}</Text>
+            <View style={[styles.statusTag, { backgroundColor: '#F8FAFC' }]}>
+              <Text style={styles.statusTagText}>{plan?.status}</Text>
             </View>
           </View>
 
-          <View className="flex-row justify-between mt-2 border-t border-emerald-500/30 pt-4">
-            <View>
-              <Text className="text-emerald-100 text-[10px] uppercase">Total Stops</Text>
-              <Text className="text-white text-xl font-bold">{plan?.totalEstimatedStops}</Text>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStatItem}>
+              <Text style={styles.statLabel}>STOPS</Text>
+              <Text style={styles.statValue}>{plan?.totalEstimatedStops}</Text>
             </View>
-            <View>
-              <Text className="text-emerald-100 text-[10px] uppercase">Priority Score</Text>
-              <Text className="text-white text-xl font-bold">{plan?.totalPriorityScore}</Text>
+            <View style={styles.heroStatItem}>
+              <Text style={styles.statLabel}>PRIORITY</Text>
+              <Text style={styles.statValue}>{plan?.totalPriorityScore}</Text>
             </View>
-            <View>
-              <Text className="text-emerald-100 text-[10px] uppercase">Vehicle</Text>
-              <Text className="text-white text-xl font-bold">{plan?.vehicle?.vehicleNumber || 'Unassigned'}</Text>
+            <View style={styles.heroStatItem}>
+              <Text style={styles.statLabel}>VEHICLE</Text>
+              <Text style={styles.statValue}>{plan?.vehicle?.vehicleNumber || '---'}</Text>
             </View>
           </View>
         </View>
 
-        {/* Assigned Info (if not DRAFT) */}
-        {plan?.status !== 'DRAFT' && (
-          <View className="bg-white p-4 rounded-2xl mb-6 border border-gray-100 shadow-sm">
-             <Text className="text-xs font-bold text-gray-400 uppercase mb-3">Assigned Team</Text>
-             <View className="flex-row items-center mb-2">
-                <View className="w-6 h-6 rounded-full bg-emerald-100 items-center justify-center mr-2">
-                   <Ionicons name="person" size={14} color="#059669" />
+        {/* Deployment Section */}
+        {plan?.status !== 'DRAFT' ? (
+          <View style={styles.deploymentSection}>
+            <Text style={styles.sectionTitle}>DEPLOYED PERSONNEL</Text>
+            <View style={styles.personnelCard}>
+              <View style={styles.personRow}>
+                <View style={styles.personIcon}>
+                  <Ionicons name="person" size={16} color="#10B981" />
                 </View>
-                <Text className="text-gray-800 font-bold">{plan?.driverProfile?.user?.fullName}</Text>
-             </View>
-             <View className="flex-row items-center">
-                <View className="w-6 h-6 rounded-full bg-emerald-100 items-center justify-center mr-2">
-                   <Ionicons name="bus" size={14} color="#059669" />
+                <View>
+                  <Text style={styles.personRole}>Primary Driver</Text>
+                  <Text style={styles.personName}>{plan?.driverProfile?.user?.fullName}</Text>
                 </View>
-                <Text className="text-gray-800 font-bold">{plan?.vehicle?.vehicleNumber}</Text>
-             </View>
+              </View>
+              <View style={[styles.personRow, { marginTop: 16 }]}>
+                <View style={[styles.personIcon, { backgroundColor: '#EFF6FF' }]}>
+                  <Ionicons name="bus" size={16} color="#3B82F6" />
+                </View>
+                <View>
+                  <Text style={styles.personRole}>Assigned Vehicle</Text>
+                  <Text style={styles.personName}>{plan?.vehicle?.vehicleNumber} ({plan?.vehicle?.type})</Text>
+                </View>
+              </View>
+            </View>
           </View>
+        ) : (
+          <TouchableOpacity 
+            style={styles.assignHeroBtn}
+            onPress={() => setModalVisible(true)}
+          >
+            <Ionicons name="person-add" size={20} color="#FFFFFF" />
+            <Text style={styles.assignHeroText}>Assign Personnel to Start</Text>
+          </TouchableOpacity>
         )}
 
-        <Text className="text-lg font-bold text-gray-800 mb-4 px-1">Collection Stops</Text>
-        
-        {plan?.routeStops?.map((item: any) => (
-          <React.Fragment key={item.id}>
-            {renderStopItem({ item })}
-          </React.Fragment>
-        ))}
+        <Text style={styles.sectionTitle}>MISSION TIMELINE</Text>
+        <View style={styles.timelineContainer}>
+          {plan?.routeStops?.map((item: any, index: number) => (
+            renderStopItem(item, index === plan.routeStops.length - 1)
+          ))}
 
-        {(!plan?.routeStops || plan.routeStops.length === 0) && (
-          <Text className="text-gray-400 text-center py-10">No stops defined for this route.</Text>
-        )}
-        <View className="h-10" />
+          {(!plan?.routeStops || plan.routeStops.length === 0) && (
+            <EmptyState emoji="🗺️" title="No stops defined" subtitle="Generate a route with ready households to create stops." />
+          )}
+        </View>
+        <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Assign Modal */}
+      {/* Premium Assign Modal */}
       <Modal visible={modalVisible} transparent animationType="slide">
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-[40px] p-8 max-h-[80%]">
-            <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-2xl font-bold text-gray-800">Assign Route</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>Assign Mission</Text>
+                <Text style={styles.modalSubtitle}>Deploy personnel and fleet</Text>
+              </View>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close-circle" size={32} color="#D1D5DB" />
+                <Ionicons name="close" size={24} color="#0F172A" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text className="text-gray-500 font-bold text-xs uppercase mb-3">1. Select Driver</Text>
-              {driversLoading ? <ActivityIndicator /> : (
-                <View className="flex-row flex-wrap mb-6">
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24 }}>
+              <Text style={styles.modalSectionLabel}>1. SELECT PRIMARY DRIVER</Text>
+              {driversLoading ? <ActivityIndicator color="#10B981" /> : (
+                <View style={styles.selectionGrid}>
                   {drivers.map((d: any) => (
                     <TouchableOpacity
                       key={d.id}
                       onPress={() => setSelectedDriverId(d.id)}
-                      className={`px-4 py-3 rounded-2xl mr-2 mb-2 border ${selectedDriverId === d.id ? 'bg-emerald-600 border-emerald-600' : 'bg-gray-50 border-gray-200'}`}
+                      style={[
+                        styles.selectionPill,
+                        selectedDriverId === d.id && styles.activePill
+                      ]}
                     >
-                      <Text className={`font-bold ${selectedDriverId === d.id ? 'text-white' : 'text-gray-600'}`}>{d.user.fullName}</Text>
+                      <Text style={[styles.pillText, selectedDriverId === d.id && styles.activePillText]}>{d.user.fullName}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
 
-              <Text className="text-gray-500 font-bold text-xs uppercase mb-3">2. Select Vehicle</Text>
-              <View className="flex-row flex-wrap mb-8">
+              <Text style={[styles.modalSectionLabel, { marginTop: 24 }]}>2. SELECT FLEET VEHICLE</Text>
+              <View style={styles.selectionGrid}>
                 {vehicles.filter((v: any) => v.isActive).map((v: any) => (
                   <TouchableOpacity
                     key={v.id}
                     onPress={() => setSelectedVehicleId(v.id)}
-                    className={`px-4 py-3 rounded-2xl mr-2 mb-2 border ${selectedVehicleId === v.id ? 'bg-emerald-600 border-emerald-600' : 'bg-gray-50 border-gray-200'}`}
+                    style={[
+                      styles.selectionPill,
+                      selectedVehicleId === v.id && styles.activePill
+                    ]}
                   >
-                    <Text className={`font-bold ${selectedVehicleId === v.id ? 'text-white' : 'text-gray-600'}`}>{v.vehicleNumber}</Text>
+                    <Text style={[styles.pillText, selectedVehicleId === v.id && styles.activePillText]}>{v.vehicleNumber}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -228,13 +287,13 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
               <TouchableOpacity 
                 onPress={handleAssign}
                 disabled={assignRoute.isPending}
-                className="bg-emerald-600 p-5 rounded-2xl items-center shadow-lg shadow-emerald-600/20"
+                style={[styles.confirmBtn, assignRoute.isPending && { opacity: 0.8 }]}
               >
                 {assignRoute.isPending ? <ActivityIndicator color="white" /> : (
-                  <Text className="text-white font-bold text-lg">Confirm Assignment</Text>
+                  <Text style={styles.confirmBtnText}>CONFIRM DEPLOYMENT</Text>
                 )}
               </TouchableOpacity>
-              <View className="h-10" />
+              <View style={{ height: 40 }} />
             </ScrollView>
           </View>
         </View>
@@ -242,5 +301,413 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  headerSubtitle: {
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  trackerContainer: {
+    marginBottom: 32,
+    paddingHorizontal: 10,
+  },
+  trackerLine: {
+    height: 4,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 2,
+    position: 'absolute',
+    top: 8,
+    left: 20,
+    right: 20,
+  },
+  trackerFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
+    borderRadius: 2,
+  },
+  trackerSteps: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  stepItem: {
+    alignItems: 'center',
+    width: 60,
+  },
+  stepDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 4,
+    borderColor: '#F1F5F9',
+    marginBottom: 8,
+  },
+  activeStepDot: {
+    borderColor: '#10B981',
+  },
+  currentStepDot: {
+    backgroundColor: '#10B981',
+    borderColor: '#D1FAE5',
+  },
+  stepLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  activeStepLabel: {
+    color: '#0F172A',
+  },
+  heroCard: {
+    backgroundColor: '#0F172A',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  heroRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24,
+  },
+  heroLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  heroValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  statusTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusTagText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  heroStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    paddingTop: 20,
+  },
+  heroStatItem: {
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#94A3B8',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#10B981',
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#64748B',
+    letterSpacing: 1,
+    marginBottom: 16,
+  },
+  deploymentSection: {
+    marginBottom: 32,
+  },
+  personnelCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  personRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  personIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  personRole: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+    textTransform: 'uppercase',
+  },
+  personName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  assignHeroBtn: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    height: 60,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  assignHeroText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    marginLeft: 12,
+  },
+  timelineContainer: {
+    paddingLeft: 10,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    marginBottom: 0,
+  },
+  timelineLeft: {
+    alignItems: 'center',
+    width: 30,
+    marginRight: 10,
+  },
+  orderCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  orderText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#64748B',
+  },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 4,
+  },
+  stopCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  stopHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  residentName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  addressText: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  stopStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  stopStatusText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  stopFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F8FAFC',
+    paddingTop: 12,
+  },
+  prioBadge: {
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  prioText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  contactBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  contactBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#10B981',
+    marginLeft: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    maxHeight: height * 0.8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  modalSectionLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 1,
+    marginBottom: 16,
+  },
+  selectionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  selectionPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  activePill: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+  pillText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  activePillText: {
+    color: '#FFFFFF',
+  },
+  confirmBtn: {
+    marginTop: 24,
+    backgroundColor: '#0F172A',
+    height: 56,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  confirmBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  loadingText: {
+    marginTop: 12,
+    color: '#64748B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
 
 export default RouteDetailScreen;

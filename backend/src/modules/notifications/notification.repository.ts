@@ -7,6 +7,13 @@ export class NotificationRepository {
     });
   }
 
+  async createManyNotifications(data: { userId: string; title: string; body: string }[]) {
+    if (data.length === 0) return { count: 0 };
+    return prisma.notification.createMany({
+      data,
+    });
+  }
+
   async getByUser(userId: string, skip: number, take: number) {
     return prisma.notification.findMany({
       where: { userId },

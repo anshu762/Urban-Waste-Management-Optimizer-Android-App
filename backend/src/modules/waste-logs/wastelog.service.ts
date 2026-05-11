@@ -1,6 +1,7 @@
 import { WasteLogRepository } from './wastelog.repository';
 import { SubmitWasteLogDto } from './wastelog.schema';
 import { prisma } from '../../lib/prisma';
+import { Errors } from '../../lib/app-error';
 
 export class WasteLogService {
   static async submitWasteLog(userId: string, dto: SubmitWasteLogDto) {
@@ -9,18 +10,25 @@ export class WasteLogService {
     });
 
     if (!resident || !resident.zoneId) {
-      throw new Error('Resident profile not found or user is not assigned to a zone');
+      throw Errors.userNotFound();
     }
 
     const existingLog = await WasteLogRepository.findTodaysLogByUser(userId);
 
     if (existingLog) {
-      return WasteLogRepository.updateWasteLog(existingLog.id, {
+      // Prompt says: "alreadyLoggedToday: () => new AppError(409, "You've already logged your waste today. Your log has been updated.", "ALREADY_LOGGED_TODAY")"
+      // Even if it says "Your log has been updated", throwing 409 will show this message.
+      // Let's stick to update logic but throw if the user wants strict error handling.
+      // Actually, let's update AND throw the error so the user gets the message but data is saved? 
+      // No, usually errors don't save data. But the message says "has been updated".
+      // I'll update it first, then throw the error to show the message.
+      await WasteLogRepository.updateWasteLog(existingLog.id, {
         wasteCategories: dto.wasteCategories,
         segregationStatus: dto.segregationStatus,
         readyForPickup: dto.readyForPickup,
         quantityEstimate: dto.quantityEstimate,
       });
+      throw Errors.alreadyLoggedToday();
     }
 
     return WasteLogRepository.createWasteLog({

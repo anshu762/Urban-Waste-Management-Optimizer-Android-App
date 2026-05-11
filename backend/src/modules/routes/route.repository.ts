@@ -218,6 +218,28 @@ export class RouteRepository {
     });
   }
 
+  async getRoutePlansByDriverUserId(userId: string) {
+    return prisma.routePlan.findMany({
+      where: { driverProfile: { userId } },
+      include: {
+        vehicle: true,
+        zone: true,
+        driverProfile: { include: { user: { select: { fullName: true } } } },
+        routeStops: {
+          orderBy: { stopOrder: 'asc' },
+          include: {
+            residentProfile: {
+              include: {
+                user: { select: { fullName: true, mobile: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { routeDate: 'desc' },
+    });
+  }
+
   async updateRoutePlanStatus(id: string, status: RouteStatus) {
     return prisma.routePlan.update({
       where: { id },
@@ -243,6 +265,11 @@ export class RouteRepository {
         driverProfileId,
         vehicleId,
         status: RouteStatus.ASSIGNED,
+      },
+      include: {
+        zone: true,
+        driverProfile: true,
+        vehicle: true,
       },
     });
   }
