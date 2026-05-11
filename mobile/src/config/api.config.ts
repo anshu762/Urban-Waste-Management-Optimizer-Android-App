@@ -1,9 +1,17 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-// Using local IP for emulator or real device. Adjust as needed.
-export const API_URL = Platform.OS === 'web' ? 'http://localhost:3000/api/v1' : 'http://10.172.225.125:3000/api/v1';
+const getBaseUrl = () => {
+  // Production builds use the URL from app.json extra.apiUrl
+  const prodUrl = Constants.expoConfig?.extra?.apiUrl as string | undefined;
+  if (prodUrl && !__DEV__) return prodUrl;
+
+  // Development: use deployed backend
+  return 'https://urban-waste-management-optimizer-android-app-production.up.railway.app/api/v1';
+};
+
+export const API_URL = getBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_URL,

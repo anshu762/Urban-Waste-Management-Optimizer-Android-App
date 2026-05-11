@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "WasteOptimizer",
+    "slug": "waste-optimizer",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,21 +10,44 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#10B981"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wasteoptimizer.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow WasteOptimizer to access your photo library for uploading waste images and complaint proofs.",
+        "NSCameraUsageDescription": "Allow WasteOptimizer to access your camera for capturing waste images and complaint proofs."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#10B981"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.wasteoptimizer.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7596fb7d-2c7a-4175-aae8-cd53cb1ec984"
+      },
+      "apiUrl": "https://urban-waste-management-optimizer-android-app-production.up.railway.app/api/v1"
+    },
+    "plugins": [
+      "expo-image-picker",
+      "expo-font"
+    ],
+    "owner": "anubhavxsingh"
   }
 }

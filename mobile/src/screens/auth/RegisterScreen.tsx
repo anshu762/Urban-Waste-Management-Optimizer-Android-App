@@ -11,7 +11,7 @@ import { AuthTextField } from '../../components/auth/AuthTextField';
 import { AuthPrimaryButton } from '../../components/auth/AuthPrimaryButton';
 
 
-type Role = 'RESIDENT' | 'ADMIN' | 'DRIVER';
+type Role = 'RESIDENT' | 'DRIVER';
 
 export const RegisterScreen = ({ navigation }: any) => {
   const [fullName, setFullName] = useState('');
@@ -101,7 +101,6 @@ export const RegisterScreen = ({ navigation }: any) => {
           <View style={styles.roleRow}>
             <RoleOption selected={role === 'RESIDENT'} onSelect={() => setRole('RESIDENT')} title="Resident" icon="home-outline" />
             <RoleOption selected={role === 'DRIVER'} onSelect={() => setRole('DRIVER')} title="Driver" icon="car-outline" />
-            <RoleOption selected={role === 'ADMIN'} onSelect={() => setRole('ADMIN')} title="Admin" icon="shield-outline" />
           </View>
         </View>
 
