@@ -13,6 +13,7 @@ import { LogWasteScreen } from '../screens/resident/LogWasteScreen';
 import { ReportMissedPickupScreen } from '../screens/resident/ReportMissedPickupScreen';
 import { MyReportsScreen } from '../screens/resident/MyReportsScreen';
 import { ComplaintDetailScreen } from '../screens/resident/ComplaintDetailScreen';
+import { WasteLogDetailScreen } from '../screens/resident/WasteLogDetailScreen';
 import { AddressSetupScreen } from '../screens/onboarding/AddressSetupScreen';
 import { ProfileScreen } from '../screens/resident/ProfileScreen';
 
@@ -41,8 +42,9 @@ export const ResidentStack = () => (
       options={{ headerShown: true, title: 'Alerts', headerBackTitle: 'Back' }}
     />
     <Stack.Screen name="AddressSetup" component={AddressSetupScreen} options={{ headerShown: true, title: 'Update Profile & Zone' }} />
-    <Stack.Screen name="ReportMissedPickup" component={ReportMissedPickupScreen} options={{ headerShown: true, title: 'Report Missed Pickup' }} />
-    <Stack.Screen name="ComplaintDetail" component={ComplaintDetailScreen} options={{ headerShown: true, title: 'Report Details' }} />
+    <Stack.Screen name="ReportMissedPickup" component={ReportMissedPickupScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="ComplaintDetail" component={ComplaintDetailScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="WasteLogDetail" component={WasteLogDetailScreen} options={{ headerShown: false }} />
     <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: true, title: 'Profile' }} />
   </Stack.Navigator>
 );
