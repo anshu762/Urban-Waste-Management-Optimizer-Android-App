@@ -4,7 +4,7 @@ import { User, Prisma } from '@prisma/client';
 const includeProfiles = {
   residentProfile: true,
   adminProfile: true,
-  driverProfile: true,
+  driverProfile: { include: { vehicle: true } },
 };
 
 export class AuthRepository {

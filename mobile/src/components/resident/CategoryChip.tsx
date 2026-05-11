@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 
 interface CategoryChipProps {
   category: string;
@@ -11,13 +11,36 @@ export const CategoryChip: React.FC<CategoryChipProps> = ({ category, selected, 
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`px-4 py-2 rounded-full m-1 border ${
-        selected ? 'bg-green-500 border-green-500' : 'bg-transparent border-gray-400'
-      }`}
+      activeOpacity={0.75}
+      style={[styles.chip, selected ? styles.chipSelected : styles.chipDefault]}
     >
-      <Text className={`text-sm font-semibold ${selected ? 'text-white' : 'text-gray-700'}`}>
-        {category}
-      </Text>
+      <Text style={[styles.label, selected && styles.labelSelected]}>{category}</Text>
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    margin: 6,
+    borderWidth: 1,
+  },
+  chipDefault: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+  },
+  chipSelected: {
+    backgroundColor: '#0F172A',
+    borderColor: '#0F172A',
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  labelSelected: {
+    color: '#FFFFFF',
+  },
+});

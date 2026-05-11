@@ -1,19 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { analyticsApi } from '../../../api/analytics.api';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-type RootStackParamList = {
-  ZoneRanking: undefined;
-  RoutePlanner: { preselectedZoneId?: string }; // Assuming RoutePlanner accepts this
-};
+const { width } = Dimensions.get('window');
 
-type Props = NativeStackScreenProps<RootStackParamList, 'ZoneRanking'>;
-
-export const ZoneRankingScreen: React.FC<any> = ({ navigation }) => {
-  const { data: rankings, isLoading } = useQuery({
+export const ZoneRankingScreen = () => {
+  const navigation = useNavigation();
+  const { data: rankings, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['zoneRankings'],
     queryFn: analyticsApi.getZoneRankings,
   });
@@ -22,108 +19,318 @@ export const ZoneRankingScreen: React.FC<any> = ({ navigation }) => {
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
-        <Text style={styles.loadingText}>Loading Rankings...</Text>
-      </View>
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator size="large" color="#10B981" />
+        <Text style={styles.loadingText}>Calculating priorities...</Text>
+      </SafeAreaView>
     );
   }
 
+  const getRankColor = (rank: number) => {
+    if (rank === 1) return '#EF4444'; // Top Priority - Red
+    if (rank === 2) return '#F59E0B'; // High - Orange
+    if (rank === 3) return '#8B5CF6'; // Medium - Purple
+    return '#64748B'; // Normal - Slate
+  };
+
+  const getRankBg = (rank: number) => {
+    if (rank === 1) return '#FEF2F2';
+    if (rank === 2) return '#FFFBEB';
+    if (rank === 3) return '#F5F3FF';
+    return '#F8FAFC';
+  };
+
   return (
-    <ScrollView className="flex-1 bg-gray-50 p-4">
-      <Text className="text-2xl font-bold text-gray-800 mb-6">Zone Priority Rankings</Text>
+    <SafeAreaView style={styles.container}>
+      {/* Premium Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={20} color="#0F172A" />
+        </TouchableOpacity>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={styles.headerTitle}>Zone Leaderboard</Text>
+          <Text style={styles.headerSubtitle}>Operational Priority Ranking</Text>
+        </View>
+        <View style={{ width: 40 }} />
+      </View>
 
-      {rankings?.map((zone) => {
-        const isExpanded = expandedZone === zone.zoneId;
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {rankings?.map((zone) => {
+          const isExpanded = expandedZone === zone.zoneId;
+          const rankColor = getRankColor(zone.rank);
+          const rankBg = getRankBg(zone.rank);
 
-        return (
-          <TouchableOpacity 
-            key={zone.zoneId}
-            activeOpacity={0.8}
-            onPress={() => setExpandedZone(isExpanded ? null : zone.zoneId)}
-            className={`bg-white rounded-xl shadow-sm border mb-4 overflow-hidden ${
-              zone.rank === 1 ? 'border-red-200' :
-              zone.rank === 2 ? 'border-orange-200' :
-              zone.rank === 3 ? 'border-yellow-200' : 'border-gray-100'
-            }`}
-          >
-            <View className="p-4 flex-row justify-between items-center">
-              <View className="flex-row items-center flex-1">
-                <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${
-                  zone.rank === 1 ? 'bg-red-100' :
-                  zone.rank === 2 ? 'bg-orange-100' :
-                  zone.rank === 3 ? 'bg-yellow-100' : 'bg-gray-100'
-                }`}>
-                  <Text className={`font-black text-lg ${
-                    zone.rank === 1 ? 'text-red-700' :
-                    zone.rank === 2 ? 'text-orange-700' :
-                    zone.rank === 3 ? 'text-yellow-700' : 'text-gray-600'
-                  }`}>#{zone.rank}</Text>
+          return (
+            <TouchableOpacity 
+              key={zone.zoneId}
+              activeOpacity={0.8}
+              onPress={() => setExpandedZone(isExpanded ? null : zone.zoneId)}
+              style={[
+                styles.rankCard,
+                isExpanded && styles.expandedCard,
+                { borderLeftColor: rankColor, borderLeftWidth: 4 }
+              ]}
+            >
+              <View style={styles.cardMain}>
+                <View style={[styles.rankBadge, { backgroundColor: rankBg }]}>
+                  <Text style={[styles.rankText, { color: rankColor }]}>#{zone.rank}</Text>
                 </View>
                 
-                <View className="flex-1">
-                  <Text className="text-lg font-bold text-gray-800 truncate" numberOfLines={1}>{zone.zoneName}</Text>
-                  <Text className="text-sm text-gray-500 italic mt-0.5" numberOfLines={1}>{zone.recommendation}</Text>
+                <View style={styles.zoneInfo}>
+                  <Text style={styles.zoneName} numberOfLines={1}>{zone.zoneName}</Text>
+                  <Text style={styles.recommendation} numberOfLines={1}>
+                    {zone.recommendation}
+                  </Text>
+                </View>
+
+                <View style={styles.scoreContainer}>
+                  <Text style={styles.scoreLabel}>SCORE</Text>
+                  <Text style={styles.scoreValue}>{zone.totalScore}</Text>
                 </View>
               </View>
 
-              <View className="items-end ml-2">
-                <Text className="text-xs text-gray-400 font-bold mb-0.5">SCORE</Text>
-                <Text className="text-2xl font-black text-gray-800">{zone.totalScore}</Text>
-              </View>
-            </View>
+              {isExpanded && (
+                <View style={styles.breakdownContainer}>
+                  <Text style={styles.breakdownTitle}>Priority Breakdown</Text>
+                  
+                  <View style={styles.breakdownRow}>
+                    <View style={styles.breakdownLabelGroup}>
+                      <Ionicons name="alert-circle-outline" size={14} color="#EF4444" />
+                      <Text style={styles.breakdownLabel}>Complaints ({zone.breakdown.openComplaints})</Text>
+                    </View>
+                    <Text style={styles.breakdownScore}>+{zone.breakdown.complaintsScore}</Text>
+                  </View>
+                  
+                  <View style={styles.breakdownRow}>
+                    <View style={styles.breakdownLabelGroup}>
+                      <Ionicons name="leaf-outline" size={14} color="#10B981" />
+                      <Text style={styles.breakdownLabel}>Ready Logs ({zone.breakdown.readyLogs})</Text>
+                    </View>
+                    <Text style={styles.breakdownScore}>+{zone.breakdown.logsScore}</Text>
+                  </View>
+                  
+                  <View style={styles.breakdownRow}>
+                    <View style={styles.breakdownLabelGroup}>
+                      <Ionicons name="water-outline" size={14} color="#3B82F6" />
+                      <Text style={styles.breakdownLabel}>Wet Waste ({zone.breakdown.wetWasteCount})</Text>
+                    </View>
+                    <Text style={styles.breakdownScore}>+{zone.breakdown.wetScore}</Text>
+                  </View>
+                  
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Total Score</Text>
+                    <Text style={styles.totalValue}>{zone.totalScore}</Text>
+                  </View>
 
-            {isExpanded && (
-              <View className="px-4 pb-4 pt-2 bg-gray-50 border-t border-gray-100">
-                <Text className="font-bold text-gray-700 mb-2">Score Breakdown:</Text>
-                
-                <View className="flex-row justify-between mb-1">
-                  <Text className="text-gray-600">📝 Complaints: {zone.breakdown.openComplaints} × 5pts</Text>
-                  <Text className="font-bold text-gray-700">={zone.breakdown.complaintsScore}</Text>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => {
+                      (navigation as any).navigate('RouteManagement', { preselectedZoneId: zone.zoneId });
+                    }}
+                  >
+                    <Ionicons name="map" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                    <Text style={styles.buttonText}>Generate Optimized Route</Text>
+                  </TouchableOpacity>
                 </View>
-                
-                <View className="flex-row justify-between mb-1">
-                  <Text className="text-gray-600">✅ Ready logs: {zone.breakdown.readyLogs} × 2pts</Text>
-                  <Text className="font-bold text-gray-700">={zone.breakdown.logsScore}</Text>
-                </View>
-                
-                <View className="flex-row justify-between mb-2">
-                  <Text className="text-gray-600">💧 Wet waste: {zone.breakdown.wetWasteCount} × 3pts</Text>
-                  <Text className="font-bold text-gray-700">={zone.breakdown.wetScore}</Text>
-                </View>
-                
-                <View className="flex-row justify-between border-t border-gray-200 pt-2 mb-4">
-                  <Text className="font-bold text-gray-800">Total Priority Score</Text>
-                  <Text className="font-black text-gray-800">{zone.totalScore}</Text>
-                </View>
-
-                {/* We assume RoutePlanner is a valid screen in the admin stack that takes params */}
-                <TouchableOpacity 
-                  className="bg-green-600 py-3 rounded-lg items-center flex-row justify-center"
-                  onPress={() => {
-                  // Navigate to AdminRoot -> RouteManagement with params
-                  (navigation as any).navigate('AdminRoot', {
-                    screen: 'RouteManagement',
-                    params: { preselectedZoneId: zone.zoneId }
-                  });
-                  }}
-                >
-                  <Ionicons name="map-outline" size={18} color="white" />
-                  <Text className="text-white font-bold ml-2">Generate Route</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </TouchableOpacity>
-        );
-      })}
-      <View className="h-10" />
-    </ScrollView>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb' },
-  loadingText: { marginTop: 12, color: '#4b5563', fontSize: 16 }
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  headerSubtitle: {
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  loadingText: {
+    marginTop: 12,
+    color: '#64748B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  rankCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 10,
+    elevation: 2,
+    overflow: 'hidden',
+  },
+  expandedCard: {
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  cardMain: {
+    flexDirection: 'row',
+    padding: 16,
+    alignItems: 'center',
+  },
+  rankBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  rankText: {
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  zoneInfo: {
+    flex: 1,
+  },
+  zoneName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  recommendation: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
+  scoreContainer: {
+    alignItems: 'flex-end',
+    marginLeft: 8,
+  },
+  scoreLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 1,
+  },
+  scoreValue: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  breakdownContainer: {
+    backgroundColor: '#F8FAFC',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  breakdownTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
+  },
+  breakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  breakdownLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  breakdownLabel: {
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  breakdownScore: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    marginBottom: 20,
+  },
+  totalLabel: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  totalValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    height: 48,
+    backgroundColor: '#0F172A',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
 });
 
 export default ZoneRankingScreen;

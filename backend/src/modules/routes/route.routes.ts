@@ -8,6 +8,7 @@ const routeController = new RouteController();
 // Admin routes
 router.post('/generate', routeController.generateRoute);
 router.get('/', routeController.getRoutePlans);
+router.get('/my', routeController.getMyRoutes);
 router.get('/:id', routeController.getRoutePlanById);
 router.post('/:id/assign', routeController.assignRoute);
 

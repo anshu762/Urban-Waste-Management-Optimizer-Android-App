@@ -10,13 +10,15 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 15000, // 15 seconds timeout
 });
 
 apiClient.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('auth_token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;
   },
@@ -26,11 +28,23 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
+    const { config, response } = error;
+
+    // Handle 401 Unauthorized
+    if (response?.status === 401) {
       await AsyncStorage.removeItem('auth_token');
       await AsyncStorage.removeItem('auth_user');
-      // A reload or state update would typically occur here
+      // Note: Navigation logout will be handled in the UI or a custom hook
     }
+
+    // Manual Retry logic for network errors
+    if (error.code === 'ERR_NETWORK' && !config._retry) {
+      config._retry = true;
+      console.log('Network error detected, retrying in 2 seconds...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return apiClient(config);
+    }
+
     return Promise.reject(error);
   }
 );
