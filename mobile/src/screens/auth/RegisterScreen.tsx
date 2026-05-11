@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppInput } from '../../components/common/AppInput';
-import { AppButton } from '../../components/common/AppButton';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { registerApi } from '../../api/auth.api';
 import { useAuthStore } from '../../stores/auth.store';
-import { AppToast } from '../../components/common/AppToast';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { Ionicons } from '@expo/vector-icons';
+import { tokens } from '../../theme/tokens';
+import { AuthScreen } from '../../components/auth/AuthScreen';
+import { AuthBranding } from '../../components/auth/AuthBranding';
+import { AuthTextField } from '../../components/auth/AuthTextField';
+import { AuthPrimaryButton } from '../../components/auth/AuthPrimaryButton';
+
 
 type Role = 'RESIDENT' | 'ADMIN' | 'DRIVER';
 
@@ -16,11 +20,14 @@ export const RegisterScreen = ({ navigation }: any) => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('RESIDENT');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
   const setAuth = useAuthStore((state) => state.setAuth);
+  const { showError, showSuccess } = useErrorHandler();
 
   const handleRegister = async () => {
     if (!fullName || !password || (!email && !mobile)) {
-      AppToast.showError('Validation Error', 'Please fill all required fields');
+      showError('Please fill all required fields');
       return;
     }
 
@@ -37,63 +44,207 @@ export const RegisterScreen = ({ navigation }: any) => {
       const response = await registerApi(payload);
       if (response.success && response.data) {
         setAuth(response.data.user, response.data.token);
-        AppToast.showSuccess('Account Created!', 'Welcome to Urban Waste Optimizer');
+        showSuccess('Account Created!', 'Welcome to Urban Waste Optimizer');
       }
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'Failed to register';
-      AppToast.showError('Registration Failed', msg);
+      showError(error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const RoleSelector = ({ selected, onSelect, title }: { selected: boolean, onSelect: () => void, title: string }) => (
+  const RoleOption = ({ selected, onSelect, title, icon }: { selected: boolean, onSelect: () => void, title: string, icon: any }) => (
     <TouchableOpacity
       onPress={onSelect}
-      className={`px-4 py-2 rounded-full border mr-2 ${selected ? 'bg-primary border-primary' : 'bg-white border-gray-300'}`}
+      style={[
+        styles.roleCard,
+        selected && styles.activeRoleCard
+      ]}
     >
-      <Text className={`${selected ? 'text-white' : 'text-gray-600'} font-medium`}>{title}</Text>
+      <View style={[styles.roleIconBox, { backgroundColor: selected ? '#10B98120' : '#F8FAFC' }]}>
+        <Ionicons name={icon} size={20} color={selected ? '#10B981' : '#94A3B8'} />
+      </View>
+      <Text style={[styles.roleText, selected && styles.activeRoleText]}>{title}</Text>
+      {selected && (
+        <View style={styles.checkIcon}>
+          <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+        </View>
+      )}
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24 }}>
-          <View className="mb-6 mt-4">
-            <Text className="text-4xl font-extrabold text-primary mb-2">Create Account</Text>
-            <Text className="text-gray-500 text-base">Join the sustainable waste movement.</Text>
-          </View>
+    <AuthScreen
+      footer={
+        <View>
+          <AuthPrimaryButton label="CREATE ACCOUNT" onPress={handleRegister} isLoading={isLoading} />
 
-          <View className="mb-4">
-            <Text className="text-gray-700 font-medium mb-2">I am a:</Text>
-            <View className="flex-row">
-              <RoleSelector selected={role === 'RESIDENT'} onSelect={() => setRole('RESIDENT')} title="Resident" />
-              <RoleSelector selected={role === 'DRIVER'} onSelect={() => setRole('DRIVER')} title="Driver" />
-              <RoleSelector selected={role === 'ADMIN'} onSelect={() => setRole('ADMIN')} title="Admin" />
-            </View>
-          </View>
-
-          <AppInput label="Full Name" placeholder="Enter your full name" value={fullName} onChangeText={setFullName} />
-          <AppInput label="Email Address (Optional)" placeholder="Enter your email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-          <AppInput label="Mobile Number (Optional)" placeholder="Enter your mobile number" value={mobile} onChangeText={setMobile} keyboardType="phone-pad" />
-          <AppInput label="Password" placeholder="Create a password" value={password} onChangeText={setPassword} secureTextEntry />
-
-          <View className="mt-4">
-            <AppButton title="Sign Up" onPress={handleRegister} isLoading={isLoading} />
-          </View>
-
-          <View className="flex-row justify-center mt-6 mb-8">
-            <Text className="text-gray-600">Already have an account? </Text>
+          <View style={styles.stickyFooterRow}>
+            <Text style={styles.footerText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text className="text-primary font-bold">Sign In</Text>
+              <Text style={styles.signInLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </View>
+      }
+    >
+      <AuthBranding />
+
+      <View style={styles.formContainer}>
+        <View style={styles.headerTextSection}>
+          <Text style={styles.titleText}>Create Account</Text>
+          <Text style={styles.subtitleText}>Join the movement for a cleaner world</Text>
+        </View>
+
+        <View style={styles.roleSelectionGroup}>
+          <Text style={styles.inputLabel}>CHOOSE YOUR ROLE</Text>
+          <View style={styles.roleRow}>
+            <RoleOption selected={role === 'RESIDENT'} onSelect={() => setRole('RESIDENT')} title="Resident" icon="home-outline" />
+            <RoleOption selected={role === 'DRIVER'} onSelect={() => setRole('DRIVER')} title="Driver" icon="car-outline" />
+            <RoleOption selected={role === 'ADMIN'} onSelect={() => setRole('ADMIN')} title="Admin" icon="shield-outline" />
+          </View>
+        </View>
+
+        <AuthTextField
+          label="FULL NAME"
+          leftIcon="person-outline"
+          placeholder="e.g. John Doe"
+          value={fullName}
+          onChangeText={setFullName}
+        />
+
+        <View style={{ marginTop: 16 }}>
+          <AuthTextField
+            label="EMAIL ADDRESS (OPTIONAL)"
+            leftIcon="mail-outline"
+            placeholder="john@example.com"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+        </View>
+
+        <View style={{ marginTop: 16 }}>
+          <AuthTextField
+            label="MOBILE NUMBER (OPTIONAL)"
+            leftIcon="call-outline"
+            placeholder="+91 9876543210"
+            value={mobile}
+            onChangeText={setMobile}
+            keyboardType="phone-pad"
+          />
+        </View>
+
+        <View style={{ marginTop: 16 }}>
+          <AuthTextField
+            label="SECURE PASSWORD"
+            leftIcon="lock-closed-outline"
+            placeholder="••••••••"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+            onPressRightIcon={() => setShowPassword(!showPassword)}
+          />
+        </View>
+
+        <Text style={styles.helperText}>Email or mobile is optional, but at least one is required.</Text>
+      </View>
+    </AuthScreen>
   );
 };
+
+const styles = StyleSheet.create({
+  formContainer: {
+    width: '100%',
+  },
+  headerTextSection: {
+    marginBottom: 20,
+  },
+  titleText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: tokens.colors.text,
+  },
+  subtitleText: {
+    fontSize: 13,
+    color: tokens.colors.textMuted,
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  helperText: {
+    fontSize: 12,
+    color: tokens.colors.textSubtle,
+    fontWeight: '600',
+    marginTop: 14,
+    marginLeft: 4,
+  },
+  roleSelectionGroup: {
+    marginBottom: 24,
+  },
+  roleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginTop: 10,
+  },
+  roleCard: {
+    flex: 1,
+    backgroundColor: tokens.colors.surfaceMuted,
+    borderRadius: tokens.radius.xl,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(15, 23, 42, 0.08)',
+    position: 'relative',
+  },
+  activeRoleCard: {
+    borderColor: tokens.colors.brand,
+    backgroundColor: tokens.colors.brandSoft,
+  },
+  roleIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  roleText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: tokens.colors.textMuted,
+  },
+  activeRoleText: {
+    color: tokens.colors.brand,
+  },
+  checkIcon: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+  },
+  inputLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: tokens.colors.textSubtle,
+    letterSpacing: 1,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  footerText: {
+    fontSize: 13,
+    color: tokens.colors.textMuted,
+    fontWeight: '500',
+  },
+  stickyFooterRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 14,
+  },
+  signInLink: {
+    fontSize: 13,
+    color: tokens.colors.brand,
+    fontWeight: '800',
+  },
+});

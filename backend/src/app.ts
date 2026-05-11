@@ -12,6 +12,7 @@ import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import vehicleRoutes from './modules/vehicles/vehicle.routes';
 import routePlanRoutes from './modules/routes/route.routes';
 import iotRoutes from './modules/iot/iot.routes';
+import analyticsRoutes from './modules/analytics/analytics.routes';
 import { authenticate, authorize } from './middleware/auth.middleware';
 
 const app = express();
@@ -23,6 +24,7 @@ app.use(express.json());
 app.use('/api/v1/admin/dashboard', authenticate, authorize('ADMIN'), dashboardRoutes);
 app.use('/api/v1/admin/vehicles', authenticate, authorize('ADMIN'), vehicleRoutes);
 app.use('/api/v1/admin/routes', authenticate, authorize('ADMIN', 'DRIVER'), routePlanRoutes);
+app.use('/api/v1/admin/analytics', authenticate, authorize('ADMIN'), analyticsRoutes);
 
 // General routes
 app.use('/api/v1/auth', authRoutes);

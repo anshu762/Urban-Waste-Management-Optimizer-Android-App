@@ -1,5 +1,6 @@
 import { zoneRepository } from './zone.repository';
 import { CreateZoneInput, UpdateZoneInput } from './zone.schema';
+import { Errors } from '../../lib/app-error';
 
 export class ZoneService {
   async getAllZones() {
@@ -9,7 +10,7 @@ export class ZoneService {
   async getZoneById(id: string) {
     const zone = await zoneRepository.findZoneById(id);
     if (!zone || !zone.isActive) {
-      throw new Error('Zone not found');
+      throw Errors.zoneNotFound();
     }
     return zone;
   }
@@ -25,7 +26,7 @@ export class ZoneService {
   async updateZone(id: string, dto: UpdateZoneInput) {
     const zone = await zoneRepository.findZoneById(id);
     if (!zone || !zone.isActive) {
-      throw new Error('Zone not found');
+      throw Errors.zoneNotFound();
     }
     return await zoneRepository.updateZone(id, dto);
   }
@@ -33,7 +34,7 @@ export class ZoneService {
   async deactivateZone(id: string) {
     const zone = await zoneRepository.findZoneById(id);
     if (!zone || !zone.isActive) {
-      throw new Error('Zone not found');
+      throw Errors.zoneNotFound();
     }
     return await zoneRepository.softDeleteZone(id);
   }

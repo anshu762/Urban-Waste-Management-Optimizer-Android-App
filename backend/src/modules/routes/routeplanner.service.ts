@@ -1,5 +1,6 @@
 import { RouteRepository } from './route.repository';
 import { notificationService } from '../notifications/notification.service';
+import { Errors, AppError } from '../../lib/app-error';
 
 export class RoutePlannerService {
   private routeRepository: RouteRepository;
@@ -18,7 +19,7 @@ export class RoutePlannerService {
     const households = await this.routeRepository.getReadyHouseholdsByZone(zoneId, date);
 
     if (households.length === 0) {
-      throw new Error('No ready households found for this zone to generate a route.');
+      throw Errors.noRouteData();
     }
 
     // Find ALL existing route plans for this zone+date and delete every one of them.
@@ -72,6 +73,10 @@ export class RoutePlannerService {
 
   async getRoutePlansByZone(zoneId: string, date?: Date) {
     return this.routeRepository.getRoutePlansByZone(zoneId, date);
+  }
+
+  async getMyRoutes(userId: string) {
+    return this.routeRepository.getRoutePlansByDriverUserId(userId);
   }
 
   async getRoutePlanById(id: string) {

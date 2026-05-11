@@ -4,6 +4,7 @@ import { prisma } from '../../lib/prisma';
 import { uploadImage } from '../../lib/cloudinary';
 import { ComplaintStatus } from '@prisma/client';
 import { notificationService } from '../notifications/notification.service';
+import { Errors } from '../../lib/app-error';
 
 export class ComplaintService {
   static async submitComplaint(userId: string, dto: SubmitComplaintDto, imageFile?: Express.Multer.File) {
@@ -12,7 +13,12 @@ export class ComplaintService {
     });
 
     if (!resident || !resident.zoneId) {
-      throw new Error('Resident profile not found or user is not assigned to a zone');
+      throw Errors.userNotFound();
+    }
+
+    // Check image size if provided
+    if (imageFile && imageFile.size > 5 * 1024 * 1024) {
+      throw Errors.imageTooLarge();
     }
 
     let imageUrl = null;
@@ -44,13 +50,24 @@ export class ComplaintService {
   static async resolveComplaint(complaintId: string, status: ComplaintStatus) {
     const complaint = await ComplaintRepository.findComplaintById(complaintId);
     if (!complaint) {
-      throw new Error('Complaint not found');
+      throw Errors.complaintNotFound();
     }
 
-    return ComplaintRepository.updateComplaintStatus(complaintId, status);
+    const updated = await ComplaintRepository.updateComplaintStatus(complaintId, status);
+
+    const statusLabel = status === 'RESOLVED' ? 'resolved' : status === 'REJECTED' ? 'rejected' : 'updated';
+    await notificationService.notifyUser(
+      updated.userId,
+      `Complaint ${statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1)}`,
+      `Your missed pickup complaint has been marked as ${statusLabel}.`
+    );
+
+    return updated;
   }
 
   static async getComplaintById(id: string) {
-    return ComplaintRepository.findComplaintById(id);
+    const complaint = await ComplaintRepository.findComplaintById(id);
+    if (!complaint) throw Errors.complaintNotFound();
+    return complaint;
   }
 }

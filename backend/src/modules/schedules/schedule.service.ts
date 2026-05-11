@@ -1,5 +1,6 @@
 import { scheduleRepository } from './schedule.repository';
 import { CreateScheduleInput, UpdateScheduleInput } from './schedule.schema';
+import { Errors } from '../../lib/app-error';
 
 export class ScheduleService {
   async getSchedulesByZone(zoneId: string) {
@@ -33,12 +34,6 @@ export class ScheduleService {
     const dayOfWeek = today.getDay(); // 0=Sun
     
     let daysUntil = pickupDay - dayOfWeek;
-    if (daysUntil < 0 || (daysUntil === 0 && weekOffset === 0)) {
-        // If today is the pickup day and we're looking for the very next one (weekOffset 0),
-        // we might want next week if the window has passed? 
-        // For simplicity, let's just always go to the "next" occurrence if daysUntil <= 0
-        // But the prompt says "if (daysUntil <= 0) daysUntil += 7"
-    }
     
     // Implementation based on prompt logic adjusted for offsets
     let baseDaysUntil = pickupDay - dayOfWeek;
@@ -56,13 +51,13 @@ export class ScheduleService {
 
   async updateSchedule(id: string, dto: UpdateScheduleInput) {
     const schedule = await scheduleRepository.findScheduleById(id);
-    if (!schedule) throw new Error('Schedule not found');
+    if (!schedule) throw Errors.scheduleNotFound();
     return await scheduleRepository.updateSchedule(id, dto);
   }
 
   async deactivate(id: string) {
     const schedule = await scheduleRepository.findScheduleById(id);
-    if (!schedule) throw new Error('Schedule not found');
+    if (!schedule) throw Errors.scheduleNotFound();
     return await scheduleRepository.deactivateSchedule(id);
   }
 }

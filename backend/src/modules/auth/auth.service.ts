@@ -3,16 +3,17 @@ import { authRepository } from './auth.repository';
 import { RegisterInput, LoginInput } from './auth.schema';
 import { signToken } from '../../lib/jwt';
 import { UserRole } from '@prisma/client';
+import { Errors } from '../../lib/app-error';
 
 export class AuthService {
   async registerUser(dto: RegisterInput) {
     if (dto.email) {
       const existing = await authRepository.findUserByEmail(dto.email);
-      if (existing) throw new Error('Email already in use');
+      if (existing) throw Errors.alreadyExists('This email');
     }
     if (dto.mobile) {
       const existing = await authRepository.findUserByMobile(dto.mobile);
-      if (existing) throw new Error('Mobile number already in use');
+      if (existing) throw Errors.alreadyExists('This phone number');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
@@ -40,16 +41,16 @@ export class AuthService {
       : await authRepository.findUserByMobile(dto.mobile!);
 
     if (!user || !user.passwordHash) {
-      throw new Error('Invalid credentials');
+      throw Errors.invalidCredentials();
     }
 
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isMatch) {
-      throw new Error('Invalid credentials');
+      throw Errors.invalidCredentials();
     }
 
     if (!user.isActive) {
-      throw new Error('Account is inactive');
+      throw Errors.unauthorized();
     }
 
     const token = signToken({ userId: user.id, role: user.role });
@@ -60,7 +61,7 @@ export class AuthService {
 
   async getMe(userId: string) {
     const user = await authRepository.findUserById(userId);
-    if (!user) throw new Error('User not found');
+    if (!user) throw Errors.userNotFound();
     
     const { passwordHash: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
