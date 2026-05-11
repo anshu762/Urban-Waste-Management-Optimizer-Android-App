@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useVehicles, useCreateVehicle, useDeleteVehicle } from '../../hooks/useVehicles';
 import { Ionicons } from '@expo/vector-icons';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -12,6 +13,7 @@ import { useErrorHandler } from '../../hooks/useErrorHandler';
 const { width, height } = Dimensions.get('window');
 
 const VehicleManagementScreen = () => {
+  const navigation = useNavigation();
   const { showError, showSuccess } = useErrorHandler();
   const { data: vehiclesData, isLoading, isError, error, refetch } = useVehicles(true);
   const createVehicle = useCreateVehicle();
@@ -97,6 +99,9 @@ const VehicleManagementScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* Premium Header */}
       <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color="#0F172A" />
+        </TouchableOpacity>
         <View>
           <Text style={styles.headerTitle}>Fleet Control</Text>
           <View style={styles.liveBadge}>
@@ -235,6 +240,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#F8FAFC',
+    gap: 12,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   headerTitle: {
     fontSize: 22,

@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { updateProfileApi } from '../../api/user.api';
 import { getZonesApi } from '../../api/zone.api';
 import { useAuthStore } from '../../stores/auth.store';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import { AuthScreen } from '../../components/auth/AuthScreen';
-import { AuthBranding } from '../../components/auth/AuthBranding';
-import { AuthTextField } from '../../components/auth/AuthTextField';
-import { AuthPrimaryButton } from '../../components/auth/AuthPrimaryButton';
-import { tokens } from '../../theme/tokens';
 
 export const AddressSetupScreen = ({ navigation }: any) => {
   const [zones, setZones] = useState<any[]>([]);
   const [isLoadingZones, setIsLoadingZones] = useState(true);
-  
+
   const [selectedZoneId, setSelectedZoneId] = useState('');
   const [buildingName, setBuildingName] = useState('');
   const [block, setBlock] = useState('');
@@ -55,27 +52,23 @@ export const AddressSetupScreen = ({ navigation }: any) => {
         landmark,
       };
       const res = await updateProfileApi(payload);
-      
+
       if (res.success) {
-        // Update user data in store with the new profile info
         const currentUser = useAuthStore.getState().user;
         if (currentUser) {
-           const updatedUser = { 
-             ...currentUser, 
-             residentProfile: res.data 
-           };
-           // We need to re-set auth to update the local storage and state
-           const token = useAuthStore.getState().token;
-           if (token) {
-             await useAuthStore.getState().setAuth(updatedUser, token);
-           }
+          const updatedUser = {
+            ...currentUser,
+            residentProfile: res.data,
+          };
+          const token = useAuthStore.getState().token;
+          if (token) {
+            await useAuthStore.getState().setAuth(updatedUser, token);
+          }
         }
-        
+
         await useAuthStore.getState().completeOnboarding();
         showSuccess('Address updated successfully');
       }
-      
-      // The RootNavigator will automatically react to the state change and switch to ResidentStack
     } catch (error) {
       showError(error);
     } finally {
@@ -83,170 +76,305 @@ export const AddressSetupScreen = ({ navigation }: any) => {
     }
   };
 
-  return (
-    <AuthScreen
-      footer={<AuthPrimaryButton label="COMPLETE SETUP" onPress={handleSubmit} isLoading={isSubmitting} />}
-    >
-      <AuthBranding />
-
-      <View style={styles.formContainer}>
-        <View style={styles.headerTextSection}>
-          <Text style={styles.titleText}>Setup Address</Text>
-          <Text style={styles.subtitleText}>We need this to schedule your pickups.</Text>
+  const FormField = ({ label, icon, value, onChangeText, placeholder }: any) => (
+    <View style={styles.fieldGroup}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <View style={styles.fieldRow}>
+        <View style={styles.fieldIconBox}>
+          <Ionicons name={icon} size={16} color="#64748B" />
         </View>
+        <TextInput
+          style={styles.fieldInput}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor="#CBD5E1"
+        />
+      </View>
+    </View>
+  );
 
-        <View style={styles.zoneSection}>
-          <Text style={styles.zoneLabel}>SELECT ZONE</Text>
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color="#0F172A" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Service Zone</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Text style={styles.pageTitle}>Update Profile & Zone</Text>
+        <Text style={styles.pageSubtitle}>We use this info to schedule your pickups.</Text>
+
+        {/* Zone Selection */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionLabel}>SELECT YOUR ZONE</Text>
 
           {isLoadingZones ? (
-            <View style={styles.zoneLoadingRow}>
-              <ActivityIndicator size="small" color={tokens.colors.brand} />
-              <Text style={styles.zoneLoadingText}>Loading zones…</Text>
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small" color="#10B981" />
+              <Text style={styles.loadingText}>Loading zones…</Text>
             </View>
           ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.zoneScroll}>
+            <View style={styles.zoneList}>
               {zones.map((z) => {
                 const selected = selectedZoneId === z.id;
                 return (
                   <TouchableOpacity
                     key={z.id}
                     onPress={() => setSelectedZoneId(z.id)}
-                    style={[styles.zonePill, selected && styles.zonePillActive]}
+                    style={[styles.zoneItem, selected && styles.zoneItemActive]}
                     activeOpacity={0.8}
                   >
-                    <Text style={[styles.zoneText, selected && styles.zoneTextActive]}>{z.zoneName}</Text>
+                    <View style={[styles.zoneRadio, selected && styles.zoneRadioActive]}>
+                      {selected && <View style={styles.zoneRadioInner} />}
+                    </View>
+                    <View style={styles.zoneInfo}>
+                      <Text style={[styles.zoneName, selected && styles.zoneNameActive]}>{z.zoneName}</Text>
+                      <Text style={styles.zoneDesc}>{z.description || z.address || 'Service area'}</Text>
+                    </View>
+                    {selected && <Ionicons name="checkmark-circle" size={20} color="#10B981" />}
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+            </View>
           )}
         </View>
 
-        <AuthTextField
-          label="BUILDING NAME"
-          leftIcon="business-outline"
-          placeholder="e.g. Green Valley Apts"
-          value={buildingName}
-          onChangeText={setBuildingName}
-        />
+        {/* Address Details */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionLabel}>ADDRESS DETAILS</Text>
 
-        <View style={{ marginTop: 16 }}>
-          <AuthTextField
-            label="BLOCK / WING"
-            leftIcon="grid-outline"
-            placeholder="e.g. Block A"
-            value={block}
-            onChangeText={setBlock}
-          />
+          <FormField label="Building Name" icon="business-outline" placeholder="e.g. Green Valley Apts" value={buildingName} onChangeText={setBuildingName} />
+          <FormField label="Block / Wing" icon="grid-outline" placeholder="e.g. Block A" value={block} onChangeText={setBlock} />
+          <FormField label="House / Flat Number" icon="home-outline" placeholder="e.g. 101" value={houseNumber} onChangeText={setHouseNumber} />
+          <FormField label="Street" icon="navigate-outline" placeholder="e.g. Main Street" value={street} onChangeText={setStreet} />
+          <FormField label="Landmark" icon="pin-outline" placeholder="e.g. Near City Park" value={landmark} onChangeText={setLandmark} />
         </View>
 
-        <View style={{ marginTop: 16 }}>
-          <AuthTextField
-            label="HOUSE / FLAT NUMBER"
-            leftIcon="home-outline"
-            placeholder="e.g. 101"
-            value={houseNumber}
-            onChangeText={setHouseNumber}
-          />
-        </View>
-
-        <View style={{ marginTop: 16 }}>
-          <AuthTextField
-            label="STREET"
-            leftIcon="navigate-outline"
-            placeholder="e.g. Main Street"
-            value={street}
-            onChangeText={setStreet}
-          />
-        </View>
-
-        <View style={{ marginTop: 16 }}>
-          <AuthTextField
-            label="LANDMARK"
-            leftIcon="pin-outline"
-            placeholder="e.g. Near City Park"
-            value={landmark}
-            onChangeText={setLandmark}
-          />
-        </View>
+        <TouchableOpacity
+          style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}
+          onPress={handleSubmit}
+          activeOpacity={0.85}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <>
+              <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+              <Text style={styles.submitText}>Save Changes</Text>
+            </>
+          )}
+        </TouchableOpacity>
 
         <Text style={styles.helperText}>You can update these details later from your profile.</Text>
-      </View>
-    </AuthScreen>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  formContainer: {
-    width: '100%',
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  headerTextSection: {
-    marginBottom: 18,
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC',
   },
-  titleText: {
-    fontSize: 24,
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  headerTitle: {
+    fontSize: 18,
     fontWeight: '800',
-    color: tokens.colors.text,
+    color: '#0F172A',
   },
-  subtitleText: {
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 32,
+  },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  pageSubtitle: {
     fontSize: 13,
-    color: tokens.colors.textMuted,
-    marginTop: 4,
     fontWeight: '500',
+    color: '#94A3B8',
+    marginBottom: 24,
   },
-  zoneSection: {
-    marginBottom: 14,
+  sectionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    marginBottom: 20,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  zoneLabel: {
+  sectionLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: tokens.colors.textSubtle,
-    letterSpacing: 1,
-    marginBottom: 10,
-    marginLeft: 4,
+    color: '#94A3B8',
+    letterSpacing: 1.5,
+    marginBottom: 14,
   },
-  zoneLoadingRow: {
+  loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 4,
+    gap: 10,
+    paddingVertical: 8,
   },
-  zoneLoadingText: {
-    marginLeft: 10,
-    fontSize: 12,
+  loadingText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: tokens.colors.textMuted,
+    color: '#94A3B8',
   },
-  zoneScroll: {
-    paddingLeft: 2,
-    paddingRight: 8,
-    paddingVertical: 2,
+  zoneList: {
+    gap: 0,
   },
-  zonePill: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 999,
-    backgroundColor: tokens.colors.surfaceMuted,
+  zoneItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    marginBottom: 6,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.10)',
-    marginRight: 10,
+    borderColor: '#F1F5F9',
   },
-  zonePillActive: {
-    backgroundColor: tokens.colors.text,
-    borderColor: tokens.colors.text,
+  zoneItemActive: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#D1FAE5',
   },
-  zoneText: {
-    fontSize: 12,
+  zoneRadio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  zoneRadioActive: {
+    borderColor: '#10B981',
+  },
+  zoneRadioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#10B981',
+  },
+  zoneInfo: {
+    flex: 1,
+  },
+  zoneName: {
+    fontSize: 14,
     fontWeight: '700',
-    color: tokens.colors.textMuted,
+    color: '#0F172A',
   },
-  zoneTextActive: {
-    color: tokens.colors.surface,
+  zoneNameActive: {
+    color: '#065F46',
+  },
+  zoneDesc: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  fieldGroup: {
+    marginBottom: 14,
+  },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#64748B',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+    marginLeft: 2,
+    textTransform: 'uppercase',
+  },
+  fieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 54,
+    borderRadius: 16,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  fieldIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fieldInput: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+    padding: 0,
+  },
+  submitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#0F172A',
+    gap: 8,
+    marginTop: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  submitBtnDisabled: {
+    opacity: 0.7,
+  },
+  submitText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   helperText: {
     fontSize: 12,
-    color: tokens.colors.textSubtle,
     fontWeight: '600',
-    marginTop: 14,
-    marginLeft: 4,
+    color: '#94A3B8',
+    marginTop: 16,
+    textAlign: 'center',
   },
 });

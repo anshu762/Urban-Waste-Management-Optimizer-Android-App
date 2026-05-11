@@ -156,25 +156,11 @@ export const ProfileSheet: React.FC<ProfileSheetProps> = ({
 
           {/* Actions List */}
           <View style={styles.body}>
-            <Text style={styles.sectionLabel}>ACCOUNT SETTINGS</Text>
-            
             <ProfileAction 
               icon="person-outline" 
               title="Personal Information" 
-              subtitle="Manage your profile and bio" 
+              subtitle="View and manage your profile details" 
               onPress={() => onPersonalInfoPress?.()}
-            />
-            <ProfileAction 
-              icon="settings-outline" 
-              title="App Preferences" 
-              subtitle="Themes, notifications, and language" 
-              onPress={() => {}}
-            />
-            <ProfileAction 
-              icon="lock-closed-outline" 
-              title="Security & Privacy" 
-              subtitle="Password and authentication" 
-              onPress={() => {}}
             />
 
             <View style={styles.divider} />
@@ -286,7 +272,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   body: {
-    padding: 24,
+    padding: 16,
+    paddingTop: 8,
   },
   sectionLabel: {
     fontSize: 10,
@@ -324,8 +311,8 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F8FAFC',
-    marginVertical: 12,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 8,
   },
   footer: {
     alignItems: 'center',

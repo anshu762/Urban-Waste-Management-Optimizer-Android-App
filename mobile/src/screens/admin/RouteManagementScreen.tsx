@@ -136,6 +136,9 @@ const RouteManagementScreen = ({ route, navigation }: any) => {
     <SafeAreaView style={styles.container}>
       {/* Premium Header */}
       <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color="#0F172A" />
+        </TouchableOpacity>
         <View>
           <Text style={styles.headerTitle}>Route Planning</Text>
           <View style={styles.liveBadge}>
@@ -263,6 +266,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#F8FAFC',
+    gap: 12,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   headerTitle: {
     fontSize: 22,
