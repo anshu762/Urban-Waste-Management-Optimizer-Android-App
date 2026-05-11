@@ -438,6 +438,10 @@ const AdminDashboardScreen = ({ navigation }: any) => {
         user={user}
         onClose={() => setProfileSheetVisible(false)}
         onLogout={initiateLogout}
+        onPersonalInfoPress={() => {
+          setProfileSheetVisible(false);
+          navigation.navigate('AdminProfile');
+        }}
       />
 
       {/* Premium Logout Confirmation */}

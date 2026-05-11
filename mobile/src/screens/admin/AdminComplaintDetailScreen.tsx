@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, Alert, StyleSheet, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { format } from 'date-fns';
@@ -7,6 +7,7 @@ import { useUpdateComplaintStatus } from '../../hooks/useComplaints';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 
 const { width } = Dimensions.get('window');
 
@@ -16,30 +17,33 @@ export const AdminComplaintDetailScreen = () => {
   const { complaint } = route.params;
   const updateStatusMutation = useUpdateComplaintStatus();
   const { showError, showSuccess } = useErrorHandler();
+  const [confirmStatus, setConfirmStatus] = useState<string | null>(null);
 
   if (!complaint) return null;
 
-  const handleUpdateStatus = (status: string) => {
-    Alert.alert('Update Status', `Mark this complaint as ${status}?`, [
-      { text: 'Cancel', style: 'cancel' },
+  const doUpdateStatus = (status: string) => {
+    updateStatusMutation.mutate(
+      { id: complaint.id, status },
       {
-        text: 'Confirm',
-        onPress: () => {
-          updateStatusMutation.mutate(
-            { id: complaint.id, status },
-            {
-              onSuccess: () => {
-                showSuccess('Status updated.');
-                navigation.goBack();
-              },
-              onError: (err: any) => {
-                showError(err);
-              },
-            }
-          );
+        onSuccess: () => {
+          setConfirmStatus(null);
+          showSuccess('Status updated.');
+          navigation.goBack();
         },
-      },
-    ]);
+        onError: (err: any) => {
+          setConfirmStatus(null);
+          showError(err);
+        },
+      }
+    );
+  };
+
+  const handleUpdateStatus = (status: string) => {
+    if (status === 'IN_PROGRESS') {
+      doUpdateStatus(status);
+    } else {
+      setConfirmStatus(status);
+    }
   };
 
   const isResolvedOrRejected = complaint.status === 'RESOLVED' || complaint.status === 'REJECTED';
@@ -182,6 +186,21 @@ export const AdminComplaintDetailScreen = () => {
         
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <ConfirmModal
+        visible={confirmStatus !== null}
+        title={confirmStatus === 'RESOLVED' ? 'Resolve Complaint' : 'Reject Case'}
+        message={
+          confirmStatus === 'RESOLVED'
+            ? 'This will mark the complaint as resolved. The resident will be notified.'
+            : 'This will reject the complaint. The resident will be notified.'
+        }
+        confirmLabel={confirmStatus === 'RESOLVED' ? 'Resolve' : 'Reject'}
+        isDanger={confirmStatus === 'REJECTED'}
+        isLoading={updateStatusMutation.isPending}
+        onConfirm={() => confirmStatus && doUpdateStatus(confirmStatus)}
+        onCancel={() => setConfirmStatus(null)}
+      />
     </SafeAreaView>
   );
 };

@@ -21,6 +21,7 @@ import ZoneRankingScreen from '../screens/admin/analytics/ZoneRankingScreen';
 import ComplianceTrendScreen from '../screens/admin/analytics/ComplianceTrendScreen';
 import InactiveResidentsScreen from '../screens/admin/analytics/InactiveResidentsScreen';
 import { AdminNotificationsScreen } from '../screens/admin/AdminNotificationsScreen';
+import { AdminProfileScreen } from '../screens/admin/AdminProfileScreen';
 
 import { CustomTabBar } from '../components/navigation/CustomTabBar';
 
@@ -52,5 +53,6 @@ export const AdminStack = () => (
     <Stack.Screen name="ZoneRanking" component={ZoneRankingScreen} />
     <Stack.Screen name="ComplianceTrend" component={ComplianceTrendScreen} />
     <Stack.Screen name="InactiveResidents" component={InactiveResidentsScreen} />
+    <Stack.Screen name="AdminProfile" component={AdminProfileScreen} />
   </Stack.Navigator>
 );

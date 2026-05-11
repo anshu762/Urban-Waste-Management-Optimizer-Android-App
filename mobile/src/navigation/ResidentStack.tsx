@@ -45,6 +45,6 @@ export const ResidentStack = () => (
     <Stack.Screen name="ReportMissedPickup" component={ReportMissedPickupScreen} options={{ headerShown: false }} />
     <Stack.Screen name="ComplaintDetail" component={ComplaintDetailScreen} options={{ headerShown: false }} />
     <Stack.Screen name="WasteLogDetail" component={WasteLogDetailScreen} options={{ headerShown: false }} />
-    <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: true, title: 'Profile' }} />
+    <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
   </Stack.Navigator>
 );

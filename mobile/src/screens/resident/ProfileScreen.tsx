@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Modal, Text, TextInput, TouchableOpacity, View, StyleSheet, ScrollView } from 'react-native';
+import { Modal, Text, TextInput, TouchableOpacity, View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { updateProfileApi } from '../../api/user.api';
 import { useAuthStore } from '../../stores/auth.store';
 import { tokens } from '../../theme/tokens';
-import { AuthPrimaryButton } from '../../components/auth/AuthPrimaryButton';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const user = useAuthStore((state) => state.user);
@@ -22,52 +22,105 @@ export const ProfileScreen = ({ navigation }: any) => {
     onSuccess: () => setIsEditing(false),
   });
 
+  const rp = user?.residentProfile;
+
+  const ProfileRow = ({ icon, label, value }: { icon: any; label: string; value: string }) => (
+    <View style={styles.profileRow}>
+      <View style={styles.profileIconBox}>
+        <Ionicons name={icon} size={18} color="#475569" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.profileLabel}>{label}</Text>
+        <Text style={styles.profileValue}>{value || '---'}</Text>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.profileCard}>
-          <Text style={styles.name}>{user?.fullName}</Text>
-          <Text style={styles.contact}>{user?.email || user?.mobile || 'No contact added'}</Text>
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleText}>{user?.role}</Text>
-          </View>
-        </View>
-
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Address Details</Text>
-          <Text style={styles.detailText}>Zone: {user?.residentProfile?.zoneId || 'Not assigned'}</Text>
-          <Text style={[styles.detailText, { marginTop: 8 }]}>Building: {user?.residentProfile?.buildingName || 'Not set'}</Text>
-          <Text style={[styles.detailText, { marginTop: 8 }]}>Block: {user?.residentProfile?.block || 'Not set'}</Text>
-          <Text style={[styles.detailText, { marginTop: 8 }]}>Street: {user?.residentProfile?.street || 'Not set'}</Text>
-
-          <View style={{ marginTop: 14 }}>
-            <AuthPrimaryButton label="EDIT ADDRESS" onPress={() => navigation.navigate('AddressSetup')} />
-          </View>
-          <View style={{ marginTop: 12 }}>
-            <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.secondaryBtn} activeOpacity={0.85}>
-              <Text style={styles.secondaryBtnText}>Edit Profile</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <TouchableOpacity onPress={logout} style={styles.logoutBtn} activeOpacity={0.85}>
-          <Text style={styles.logoutText}>Logout</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color="#0F172A" />
         </TouchableOpacity>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Avatar Section */}
+        <View style={styles.avatarSection}>
+          <View style={styles.bigAvatar}>
+            <Text style={styles.bigAvatarText}>{user?.fullName?.charAt(0) || 'R'}</Text>
+            <View style={styles.onlineDot} />
+          </View>
+          <Text style={styles.userName}>{user?.fullName || 'Resident'}</Text>
+          <View style={styles.rolePill}>
+            <Ionicons name="home" size={12} color="#10B981" />
+            <Text style={styles.roleText}>RESIDENT</Text>
+          </View>
+        </View>
+
+        {/* Contact Info */}
+        <Text style={styles.sectionTitle}>CONTACT</Text>
+        <View style={styles.detailsCard}>
+          <ProfileRow icon="person-outline" label="Full Name" value={user?.fullName || ''} />
+          <View style={styles.divider} />
+          <ProfileRow icon="call-outline" label="Mobile" value={user?.mobile || ''} />
+          <View style={styles.divider} />
+          <ProfileRow icon="mail-outline" label="Email" value={user?.email || ''} />
+        </View>
+
+        {/* Address Info */}
+        <Text style={styles.sectionTitle}>ADDRESS</Text>
+        <View style={styles.detailsCard}>
+          <ProfileRow icon="location-outline" label="Zone" value={rp?.zone?.zoneName || rp?.zoneId || 'Not assigned'} />
+          <View style={styles.divider} />
+          <ProfileRow icon="business-outline" label="Building" value={rp?.buildingName || 'Not set'} />
+          <View style={styles.divider} />
+          <ProfileRow icon="layers-outline" label="Block" value={rp?.block || 'Not set'} />
+          <View style={styles.divider} />
+          <ProfileRow icon="map-outline" label="Street" value={rp?.street || 'Not set'} />
+
+          <TouchableOpacity style={styles.editAddressBtn} onPress={() => navigation.navigate('AddressSetup')} activeOpacity={0.7}>
+            <Ionicons name="create-outline" size={16} color="#10B981" />
+            <Text style={styles.editAddressText}>Change Address</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Edit Profile */}
+        <TouchableOpacity style={styles.editProfileBtn} onPress={() => setIsEditing(true)} activeOpacity={0.8}>
+          <Ionicons name="settings-outline" size={18} color="#0F172A" />
+          <Text style={styles.editProfileText}>Edit Profile Details</Text>
+          <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+        </TouchableOpacity>
+
+        {/* Logout */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.8}>
+          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
 
       <Modal visible={isEditing} transparent animationType="slide" onRequestClose={() => setIsEditing(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.sheet}>
+            <View style={styles.sheetHandleRow}>
+              <View style={styles.sheetHandle} />
+            </View>
             <Text style={styles.sheetTitle}>Edit Profile</Text>
 
             {(['buildingName', 'block', 'street'] as const).map((field) => (
-              <View key={field} style={{ marginBottom: 12 }}>
-                <Text style={styles.sheetLabel}>{field}</Text>
+              <View key={field} style={{ marginBottom: 14 }}>
+                <Text style={styles.sheetLabel}>{field.replace(/([A-Z])/g, ' $1').trim()}</Text>
                 <TextInput
                   value={form[field]}
                   onChangeText={(value) => setForm((current) => ({ ...current, [field]: value }))}
                   style={styles.sheetInput}
                   placeholderTextColor={tokens.colors.placeholder}
+                  placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
                 />
               </View>
             ))}
@@ -82,7 +135,11 @@ export const ProfileScreen = ({ navigation }: any) => {
                 activeOpacity={0.85}
                 disabled={updateMutation.isPending}
               >
-                <Text style={styles.sheetSaveText}>{updateMutation.isPending ? 'Saving...' : 'Save'}</Text>
+                {updateMutation.isPending ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.sheetSaveText}>Save Changes</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -95,98 +152,190 @@ export const ProfileScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: tokens.colors.bg,
+    backgroundColor: '#FFFFFF',
   },
-  content: {
-    padding: 16,
-    paddingBottom: 28,
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC',
   },
-  profileCard: {
-    backgroundColor: tokens.colors.surface,
-    borderRadius: 24,
-    padding: 18,
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: tokens.colors.border,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 12,
-    elevation: 2,
+    borderColor: '#F1F5F9',
   },
-  name: {
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 32,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 28,
+    marginTop: 8,
+  },
+  bigAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#0F172A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  bigAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: '800',
+  },
+  onlineDot: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#10B981',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  userName: {
     fontSize: 22,
     fontWeight: '800',
-    color: tokens.colors.text,
+    color: '#0F172A',
+    marginBottom: 8,
   },
-  contact: {
-    marginTop: 6,
-    fontSize: 13,
-    fontWeight: '600',
-    color: tokens.colors.textMuted,
-  },
-  roleBadge: {
-    alignSelf: 'flex-start',
-    marginTop: 12,
-    backgroundColor: tokens.colors.brandSoft,
-    borderWidth: 1,
-    borderColor: tokens.colors.brandBorder,
-    paddingHorizontal: 10,
+  rolePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 12,
+    gap: 6,
   },
   roleText: {
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '800',
     color: '#059669',
-    letterSpacing: 0.6,
-  },
-  sectionCard: {
-    marginTop: 12,
-    backgroundColor: tokens.colors.surface,
-    borderRadius: 24,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
+    letterSpacing: 0.8,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 10,
     fontWeight: '800',
-    color: tokens.colors.text,
-    marginBottom: 10,
+    color: '#94A3B8',
+    letterSpacing: 1.5,
+    marginBottom: 12,
+    textTransform: 'uppercase',
   },
-  detailText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: tokens.colors.textMuted,
-  },
-  secondaryBtn: {
-    height: 50,
-    borderRadius: 16,
-    backgroundColor: tokens.colors.surfaceMuted,
+  detailsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: '#F1F5F9',
+    marginBottom: 28,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 14,
   },
-  secondaryBtnText: {
-    fontSize: 14,
+  profileLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#94A3B8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  profileValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F8FAFC',
+    marginVertical: 12,
+  },
+  editAddressBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
+  },
+  editAddressText: {
+    fontSize: 13,
     fontWeight: '800',
-    color: tokens.colors.text,
-    letterSpacing: 0.4,
+    color: '#059669',
+  },
+  editProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    gap: 10,
+  },
+  editProfileText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
   },
   logoutBtn: {
-    marginTop: 16,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: tokens.colors.danger,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    gap: 8,
+    marginTop: 8,
   },
   logoutText: {
-    color: tokens.colors.surface,
     fontSize: 15,
-    fontWeight: '900',
-    letterSpacing: 0.4,
+    fontWeight: '800',
+    color: '#EF4444',
   },
   modalOverlay: {
     flex: 1,
@@ -194,42 +343,54 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
   },
   sheet: {
-    backgroundColor: tokens.colors.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 18,
-    borderTopWidth: 1,
-    borderTopColor: tokens.colors.border,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingTop: 8,
+    maxHeight: '80%',
+  },
+  sheetHandleRow: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 2,
   },
   sheetTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '900',
-    color: tokens.colors.text,
-    marginBottom: 12,
+    color: '#0F172A',
+    marginBottom: 20,
+    textAlign: 'center',
   },
   sheetLabel: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: tokens.colors.textSubtle,
-    letterSpacing: 1,
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#64748B',
+    letterSpacing: 0.8,
     marginBottom: 8,
     marginLeft: 2,
+    textTransform: 'uppercase',
   },
   sheetInput: {
     height: 54,
     borderRadius: 16,
-    backgroundColor: tokens.colors.surfaceMuted,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.14)',
-    paddingHorizontal: 14,
-    fontSize: 14,
+    borderColor: '#F1F5F9',
+    paddingHorizontal: 16,
+    fontSize: 15,
     fontWeight: '700',
-    color: tokens.colors.text,
+    color: '#0F172A',
   },
   sheetFooter: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 6,
+    marginTop: 24,
   },
   sheetCancel: {
     flex: 1,
@@ -237,14 +398,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tokens.colors.surfaceMuted,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: tokens.colors.border,
+    borderColor: '#F1F5F9',
   },
   sheetCancelText: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: tokens.colors.textMuted,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#64748B',
   },
   sheetSave: {
     flex: 1,
@@ -252,12 +413,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tokens.colors.text,
+    backgroundColor: '#0F172A',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   sheetSaveText: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: tokens.colors.surface,
-    letterSpacing: 0.4,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
 });

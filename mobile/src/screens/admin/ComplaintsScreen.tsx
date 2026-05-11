@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, ScrollView, StyleSheet, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAdminComplaints } from '../../hooks/useComplaints';
 import { StatusBadge } from '../../components/common/StatusBadge';
@@ -20,9 +20,38 @@ const TABS = [
 export const ComplaintsScreen = () => {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState('ALL');
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const filters = activeTab === 'ALL' ? {} : { status: activeTab };
-  const { data, isLoading, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useAdminComplaints(filters);
+  const { data, isLoading, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage, isRefetching } = useAdminComplaints(filters);
+
+  useEffect(() => {
+    if (isRefetching || isRefreshing) {
+      const spin = Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        })
+      );
+      spin.start();
+      return () => spin.stop();
+    } else {
+      spinAnim.setValue(0);
+    }
+  }, [isRefetching, isRefreshing]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  };
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   const handlePress = (complaint: any) => {
     navigation.navigate('AdminComplaintDetail', { complaintId: complaint.id, complaint });
@@ -75,9 +104,16 @@ export const ComplaintsScreen = () => {
         </View>
         <TouchableOpacity 
           style={styles.headerAction}
-          onPress={() => refetch()}
+          onPress={handleRefresh}
+          disabled={isRefetching || isRefreshing}
         >
-          <Ionicons name="refresh-outline" size={20} color="#0F172A" />
+          <Animated.View style={{ transform: [{ rotate: spin }] }}>
+            <Ionicons
+              name="refresh-outline"
+              size={20}
+              color={isRefetching || isRefreshing ? '#10B981' : '#0F172A'}
+            />
+          </Animated.View>
         </TouchableOpacity>
       </View>
 
