@@ -18,6 +18,12 @@ const ICON_MAPPING: Record<string, keyof typeof Ionicons.glyphMap> = {
   PickupCalendar: 'calendar-outline',
   LogWaste: 'leaf-outline',
   MyReports: 'document-text-outline',
+
+  // Driver Tabs
+  DriverHome: 'map-outline',
+  DriverRoutes: 'list-outline',
+  DriverNotifications: 'notifications-outline',
+  DriverProfile: 'person-outline',
 };
 
 const ACTIVE_ICON_MAPPING: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -34,6 +40,12 @@ const ACTIVE_ICON_MAPPING: Record<string, keyof typeof Ionicons.glyphMap> = {
   PickupCalendar: 'calendar',
   LogWaste: 'leaf',
   MyReports: 'document-text',
+
+  // Driver Tabs
+  DriverHome: 'map',
+  DriverRoutes: 'list',
+  DriverNotifications: 'notifications',
+  DriverProfile: 'person',
 };
 
 export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {

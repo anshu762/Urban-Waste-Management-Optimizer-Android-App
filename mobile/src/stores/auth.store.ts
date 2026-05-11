@@ -18,6 +18,14 @@ export interface User {
       zoneName: string;
     } | null;
   };
+  driverProfile?: {
+    id: string;
+    vehicleId: string | null;
+    vehicle?: {
+      vehicleNumber: string;
+      capacityUnits: number;
+    } | null;
+  };
 }
 
 interface AuthState {
