@@ -125,10 +125,7 @@ export const ZoneRankingScreen = () => {
                   <TouchableOpacity 
                     style={styles.actionButton}
                     onPress={() => {
-                      (navigation as any).navigate('AdminRoot', {
-                        screen: 'RouteManagement',
-                        params: { preselectedZoneId: zone.zoneId }
-                      });
+                      (navigation as any).navigate('RouteManagement', { preselectedZoneId: zone.zoneId });
                     }}
                   >
                     <Ionicons name="map" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
