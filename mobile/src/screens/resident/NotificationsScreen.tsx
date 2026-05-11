@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { getMyNotifications, markAsRead } from '../../api/notification.api';
 import { format, parseISO } from 'date-fns';
@@ -19,20 +19,29 @@ import { parseError } from '../../lib/error-parser';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton';
 
 export const NotificationsScreen = () => {
-  const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
   const {
     data,
     isLoading,
-    isFetching,
     isError,
     error,
     refetch,
     isRefetching,
-  } = useQuery({
-    queryKey: ['notifications', page],
-    queryFn: () => getMyNotifications(page),
+    fetchNextPage,
+    isFetchingNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['notifications'],
+    queryFn: ({ pageParam }) => getMyNotifications(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage?.data?.pagination;
+      if (pagination && pagination.page < pagination.totalPages) {
+        return pagination.page + 1;
+      }
+      return undefined;
+    },
   });
 
   const markReadMutation = useMutation({
@@ -42,7 +51,7 @@ export const NotificationsScreen = () => {
     },
   });
 
-  const notifications = data?.data?.notifications || [];
+  const notifications = data?.pages?.flatMap((p) => p?.data?.notifications || []) || [];
 
   const renderItem = ({ item }: { item: any }) => {
     const unread = !item.isRead;
@@ -77,7 +86,7 @@ export const NotificationsScreen = () => {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      {isLoading && page === 1 ? (
+      {isLoading ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator size="large" color="#0F172A" />
           <View style={styles.skeletonCol}>
@@ -110,14 +119,10 @@ export const NotificationsScreen = () => {
             />
           }
           ItemSeparatorComponent={() => <View style={styles.sep} />}
-          onEndReached={() => {
-            if (data?.data?.pagination?.totalPages > page) {
-              setPage(page + 1);
-            }
-          }}
+          onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
           onEndReachedThreshold={0.5}
           ListFooterComponent={
-            isFetching && page > 1 ? (
+            isFetchingNextPage ? (
               <View style={styles.footerLoad}>
                 <ActivityIndicator size="small" color="#0F172A" />
               </View>

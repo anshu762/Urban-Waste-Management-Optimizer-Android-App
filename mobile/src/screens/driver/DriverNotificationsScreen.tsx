@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { getMyNotifications, markAsRead } from '../../api/notification.api';
 import { format, parseISO, isToday, isYesterday, differenceInHours, differenceInMinutes } from 'date-fns';
@@ -72,20 +72,29 @@ type ListItem =
   | { type: 'notif'; item: any };
 
 const DriverNotificationsScreen = () => {
-  const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
   const {
     data,
     isLoading,
-    isFetching,
     isError,
     error,
     refetch,
     isRefetching,
-  } = useQuery({
-    queryKey: ['notifications', page],
-    queryFn: () => getMyNotifications(page),
+    fetchNextPage,
+    isFetchingNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['notifications'],
+    queryFn: ({ pageParam }) => getMyNotifications(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage?.data?.pagination;
+      if (pagination && pagination.page < pagination.totalPages) {
+        return pagination.page + 1;
+      }
+      return undefined;
+    },
   });
 
   const markReadMutation = useMutation({
@@ -95,7 +104,7 @@ const DriverNotificationsScreen = () => {
     },
   });
 
-  const notifications = data?.data?.notifications || [];
+  const notifications = data?.pages?.flatMap((p) => p?.data?.notifications || []) || [];
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
 
   const flatList: ListItem[] = useMemo(() => {
@@ -203,7 +212,7 @@ const DriverNotificationsScreen = () => {
         )}
       </View>
 
-      {isLoading && page === 1 ? (
+      {isLoading ? (
         renderSkeleton()
       ) : isError ? (
         <View style={styles.errorPad}>
@@ -230,16 +239,12 @@ const DriverNotificationsScreen = () => {
               subtitle="Route assignments & service alerts will appear here."
             />
           }
-          onEndReached={() => {
-            if (data?.data?.pagination?.totalPages > page) {
-              setPage(page + 1);
-            }
-          }}
-          onEndReachedThreshold={0.5}
+          onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
+          onEndReachedThreshold={0.3}
           ListFooterComponent={
-            isFetching && page > 1 ? (
+            isFetchingNextPage ? (
               <View style={styles.footerLoad}>
-                <ActivityIndicator size="small" color="#0F172A" />
+                <ActivityIndicator size="small" color="#10B981" />
               </View>
             ) : null
           }

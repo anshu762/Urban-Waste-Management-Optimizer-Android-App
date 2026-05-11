@@ -262,7 +262,10 @@ const AdminDashboardScreen = ({ navigation }: any) => {
           >
             <Ionicons name="download-outline" size={20} color={isExporting ? '#94A3B8' : '#0F172A'} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn}>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => navigation.navigate('AdminNotifications')}
+          >
             <Ionicons name="notifications-outline" size={20} color="#0F172A" />
             <View style={styles.notifDot} />
           </TouchableOpacity>
