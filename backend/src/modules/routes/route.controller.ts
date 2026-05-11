@@ -38,6 +38,16 @@ export class RouteController {
     }
   };
 
+  getMyRoutes = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+      const plans = await this.routePlannerService.getMyRoutes(userId);
+      res.status(200).json({ success: true, data: plans });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  };
+
   getRoutePlanById = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;

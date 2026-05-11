@@ -75,6 +75,10 @@ export class RoutePlannerService {
     return this.routeRepository.getRoutePlansByZone(zoneId, date);
   }
 
+  async getMyRoutes(userId: string) {
+    return this.routeRepository.getRoutePlansByDriverUserId(userId);
+  }
+
   async getRoutePlanById(id: string) {
     return this.routeRepository.getRoutePlanById(id);
   }
