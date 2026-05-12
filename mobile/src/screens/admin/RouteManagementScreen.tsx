@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, Modal, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGenerateRoute, useRoutePlans } from '../../hooks/useRoutes';
 import { useZones } from '../../hooks/useZones';
@@ -9,6 +9,7 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorCard } from '../../components/common/ErrorCard';
 import { parseError } from '../../lib/error-parser';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { SwipeableBottomSheet } from '../../components/common/SwipeableBottomSheet';
 
 const { width, height } = Dimensions.get('window');
 
@@ -204,51 +205,38 @@ const RouteManagementScreen = ({ route, navigation }: any) => {
       )}
 
       {/* Zone Selection Modal */}
-      <Modal
-        visible={isModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Service Areas</Text>
-              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#0F172A" />
+      <SwipeableBottomSheet visible={isModalVisible} onClose={() => setIsModalVisible(false)}>
+        <View style={{ padding: 20 }}>
+          <Text style={styles.modalTitle}>Service Areas</Text>
+          <FlatList
+            data={activeZones}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity 
+                style={[
+                  styles.zoneItem,
+                  selectedZoneId === item.id && styles.activeZoneItem
+                ]}
+                onPress={() => {
+                  setSelectedZoneId(item.id);
+                  setIsModalVisible(false);
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[
+                    styles.zoneItemName,
+                    selectedZoneId === item.id && styles.activeZoneItemText
+                  ]}>{item.zoneName}</Text>
+                  <Text style={styles.zoneItemCity}>{item.city}</Text>
+                </View>
+                {selectedZoneId === item.id && (
+                  <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                )}
               </TouchableOpacity>
-            </View>
-            <FlatList
-              data={activeZones}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={{ padding: 20 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={[
-                    styles.zoneItem,
-                    selectedZoneId === item.id && styles.activeZoneItem
-                  ]}
-                  onPress={() => {
-                    setSelectedZoneId(item.id);
-                    setIsModalVisible(false);
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={[
-                      styles.zoneItemName,
-                      selectedZoneId === item.id && styles.activeZoneItemText
-                    ]}>{item.zoneName}</Text>
-                    <Text style={styles.zoneItemCity}>{item.city}</Text>
-                  </View>
-                  {selectedZoneId === item.id && (
-                    <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                  )}
-                </TouchableOpacity>
-              )}
-            />
-          </View>
+            )}
+          />
         </View>
-      </Modal>
+      </SwipeableBottomSheet>
     </SafeAreaView>
   );
 };

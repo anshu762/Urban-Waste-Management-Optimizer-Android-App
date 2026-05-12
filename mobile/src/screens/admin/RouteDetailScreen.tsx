@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, FlatList, Modal, Alert, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, FlatList, Alert, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoutePlanById, useAssignRoute } from '../../hooks/useRoutes';
 import { useVehicles } from '../../hooks/useVehicles';
@@ -11,6 +11,7 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { FullScreenError } from '../../components/common/FullScreenError';
 import { parseError } from '../../lib/error-parser';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { SwipeableBottomSheet } from '../../components/common/SwipeableBottomSheet';
 
 const { width, height } = Dimensions.get('window');
 
@@ -236,68 +237,56 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
       </ScrollView>
 
       {/* Premium Assign Modal */}
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>Assign Mission</Text>
-                <Text style={styles.modalSubtitle}>Deploy personnel and fleet</Text>
-              </View>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#0F172A" />
-              </TouchableOpacity>
+      <SwipeableBottomSheet visible={modalVisible} onClose={() => setModalVisible(false)}>
+        <View style={{ padding: 24 }}>
+          <Text style={styles.modalTitle}>Assign Mission</Text>
+          <Text style={styles.modalSubtitle}>Deploy personnel and fleet</Text>
+
+          <Text style={styles.modalSectionLabel}>1. SELECT PRIMARY DRIVER</Text>
+          {driversLoading ? <ActivityIndicator color="#10B981" /> : (
+            <View style={styles.selectionGrid}>
+              {drivers.map((d: any) => (
+                <TouchableOpacity
+                  key={d.id}
+                  onPress={() => setSelectedDriverId(d.id)}
+                  style={[
+                    styles.selectionPill,
+                    selectedDriverId === d.id && styles.activePill
+                  ]}
+                >
+                  <Text style={[styles.pillText, selectedDriverId === d.id && styles.activePillText]}>{d.user.fullName}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
+          )}
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24 }}>
-              <Text style={styles.modalSectionLabel}>1. SELECT PRIMARY DRIVER</Text>
-              {driversLoading ? <ActivityIndicator color="#10B981" /> : (
-                <View style={styles.selectionGrid}>
-                  {drivers.map((d: any) => (
-                    <TouchableOpacity
-                      key={d.id}
-                      onPress={() => setSelectedDriverId(d.id)}
-                      style={[
-                        styles.selectionPill,
-                        selectedDriverId === d.id && styles.activePill
-                      ]}
-                    >
-                      <Text style={[styles.pillText, selectedDriverId === d.id && styles.activePillText]}>{d.user.fullName}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-
-              <Text style={[styles.modalSectionLabel, { marginTop: 24 }]}>2. SELECT FLEET VEHICLE</Text>
-              <View style={styles.selectionGrid}>
-                {vehicles.filter((v: any) => v.isActive).map((v: any) => (
-                  <TouchableOpacity
-                    key={v.id}
-                    onPress={() => setSelectedVehicleId(v.id)}
-                    style={[
-                      styles.selectionPill,
-                      selectedVehicleId === v.id && styles.activePill
-                    ]}
-                  >
-                    <Text style={[styles.pillText, selectedVehicleId === v.id && styles.activePillText]}>{v.vehicleNumber}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <TouchableOpacity 
-                onPress={handleAssign}
-                disabled={assignRoute.isPending}
-                style={[styles.confirmBtn, assignRoute.isPending && { opacity: 0.8 }]}
+          <Text style={[styles.modalSectionLabel, { marginTop: 24 }]}>2. SELECT FLEET VEHICLE</Text>
+          <View style={styles.selectionGrid}>
+            {vehicles.filter((v: any) => v.isActive).map((v: any) => (
+              <TouchableOpacity
+                key={v.id}
+                onPress={() => setSelectedVehicleId(v.id)}
+                style={[
+                  styles.selectionPill,
+                  selectedVehicleId === v.id && styles.activePill
+                ]}
               >
-                {assignRoute.isPending ? <ActivityIndicator color="white" /> : (
-                  <Text style={styles.confirmBtnText}>CONFIRM DEPLOYMENT</Text>
-                )}
+                <Text style={[styles.pillText, selectedVehicleId === v.id && styles.activePillText]}>{v.vehicleNumber}</Text>
               </TouchableOpacity>
-              <View style={{ height: 40 }} />
-            </ScrollView>
+            ))}
           </View>
+
+          <TouchableOpacity 
+            onPress={handleAssign}
+            disabled={assignRoute.isPending}
+            style={[styles.confirmBtn, assignRoute.isPending && { opacity: 0.8 }]}
+          >
+            {assignRoute.isPending ? <ActivityIndicator color="white" /> : (
+              <Text style={styles.confirmBtnText}>CONFIRM DEPLOYMENT</Text>
+            )}
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </SwipeableBottomSheet>
     </SafeAreaView>
   );
 };

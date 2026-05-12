@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions, Modal, FlatList } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions, FlatList } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,6 +7,7 @@ import { analyticsApi } from '../../../api/analytics.api';
 import { getZonesApi } from '../../../api/zone.api';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SwipeableBottomSheet } from '../../../components/common/SwipeableBottomSheet';
 
 const { width, height } = Dimensions.get('window');
 
@@ -211,51 +212,38 @@ export const AnalyticsHomeScreen = () => {
       </ScrollView>
 
       {/* Premium Zone Selection Modal */}
-      <Modal
-        visible={isModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Service Area</Text>
-              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#0F172A" />
+      <SwipeableBottomSheet visible={isModalVisible} onClose={() => setIsModalVisible(false)}>
+        <View style={{ padding: 20 }}>
+          <Text style={styles.modalTitle}>Select Service Area</Text>
+          <FlatList
+            data={activeZones}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity 
+                style={[
+                  styles.zoneItem,
+                  selectedZone === item.id && styles.activeZoneItem
+                ]}
+                onPress={() => {
+                  setSelectedZone(item.id);
+                  setIsModalVisible(false);
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[
+                    styles.zoneItemName,
+                    selectedZone === item.id && styles.activeZoneItemText
+                  ]}>{item.zoneName}</Text>
+                  <Text style={styles.zoneItemCity}>{item.city}</Text>
+                </View>
+                {selectedZone === item.id && (
+                  <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                )}
               </TouchableOpacity>
-            </View>
-            <FlatList
-              data={activeZones}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={{ padding: 20 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={[
-                    styles.zoneItem,
-                    selectedZone === item.id && styles.activeZoneItem
-                  ]}
-                  onPress={() => {
-                    setSelectedZone(item.id);
-                    setIsModalVisible(false);
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={[
-                      styles.zoneItemName,
-                      selectedZone === item.id && styles.activeZoneItemText
-                    ]}>{item.zoneName}</Text>
-                    <Text style={styles.zoneItemCity}>{item.city}</Text>
-                  </View>
-                  {selectedZone === item.id && (
-                    <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                  )}
-                </TouchableOpacity>
-              )}
-            />
-          </View>
+            )}
+          />
         </View>
-      </Modal>
+      </SwipeableBottomSheet>
     </SafeAreaView>
   );
 };

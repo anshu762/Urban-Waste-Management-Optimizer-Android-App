@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Modal, Text, TextInput, TouchableOpacity, View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { Text, TextInput, TouchableOpacity, View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { updateProfileApi } from '../../api/user.api';
 import { useAuthStore } from '../../stores/auth.store';
 import { tokens } from '../../theme/tokens';
+import { SwipeableBottomSheet } from '../../components/common/SwipeableBottomSheet';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const user = useAuthStore((state) => state.user);
@@ -97,47 +98,40 @@ export const ProfileScreen = ({ navigation }: any) => {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      <Modal visible={isEditing} transparent animationType="slide" onRequestClose={() => setIsEditing(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHandleRow}>
-              <View style={styles.sheetHandle} />
-            </View>
-            <Text style={styles.sheetTitle}>Edit Profile</Text>
+      <SwipeableBottomSheet visible={isEditing} onClose={() => setIsEditing(false)}>
+        <Text style={styles.sheetTitle}>Edit Profile</Text>
 
-            {(['buildingName', 'block', 'street'] as const).map((field) => (
-              <View key={field} style={{ marginBottom: 14 }}>
-                <Text style={styles.sheetLabel}>{field.replace(/([A-Z])/g, ' $1').trim()}</Text>
-                <TextInput
-                  value={form[field]}
-                  onChangeText={(value) => setForm((current) => ({ ...current, [field]: value }))}
-                  style={styles.sheetInput}
-                  placeholderTextColor={tokens.colors.placeholder}
-                  placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
-                />
-              </View>
-            ))}
-
-            <View style={styles.sheetFooter}>
-              <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.sheetCancel} activeOpacity={0.75}>
-                <Text style={styles.sheetCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => updateMutation.mutate(form)}
-                style={styles.sheetSave}
-                activeOpacity={0.85}
-                disabled={updateMutation.isPending}
-              >
-                {updateMutation.isPending ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.sheetSaveText}>Save Changes</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+        {(['buildingName', 'block', 'street'] as const).map((field) => (
+          <View key={field} style={{ marginBottom: 14, paddingHorizontal: 24 }}>
+            <Text style={styles.sheetLabel}>{field.replace(/([A-Z])/g, ' $1').trim()}</Text>
+            <TextInput
+              value={form[field]}
+              onChangeText={(value) => setForm((current) => ({ ...current, [field]: value }))}
+              style={styles.sheetInput}
+              placeholderTextColor={tokens.colors.placeholder}
+              placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
+            />
           </View>
+        ))}
+
+        <View style={styles.sheetFooter}>
+          <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.sheetCancel} activeOpacity={0.75}>
+            <Text style={styles.sheetCancelText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => updateMutation.mutate(form)}
+            style={styles.sheetSave}
+            activeOpacity={0.85}
+            disabled={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.sheetSaveText}>Save Changes</Text>
+            )}
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </SwipeableBottomSheet>
     </SafeAreaView>
   );
 };

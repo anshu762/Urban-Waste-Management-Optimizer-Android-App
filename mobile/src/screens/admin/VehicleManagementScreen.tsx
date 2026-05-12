@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, TextInput, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useVehicles, useCreateVehicle, useDeleteVehicle } from '../../hooks/useVehicles';
@@ -9,6 +9,7 @@ import { ErrorCard } from '../../components/common/ErrorCard';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { parseError } from '../../lib/error-parser';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { SwipeableBottomSheet } from '../../components/common/SwipeableBottomSheet';
 
 const { width, height } = Dimensions.get('window');
 
@@ -160,58 +161,47 @@ const VehicleManagementScreen = () => {
       )}
 
       {/* Premium Add Vehicle Modal */}
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>Register Vehicle</Text>
-                <Text style={styles.modalSubtitle}>Add new asset to the fleet</Text>
-              </View>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#0F172A" />
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.modalBody}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>VEHICLE NUMBER</Text>
-                <TextInput 
-                  style={styles.input}
-                  placeholder="e.g. MH-01-AB-1234"
-                  placeholderTextColor="#94A3B8"
-                  value={newVehicleNumber}
-                  onChangeText={setNewVehicleNumber}
-                />
-              </View>
-
-              <View style={[styles.inputGroup, { marginTop: 20 }]}>
-                <Text style={styles.inputLabel}>CAPACITY (UNITS)</Text>
-                <TextInput 
-                  style={styles.input}
-                  placeholder="100"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="numeric"
-                  value={newCapacity}
-                  onChangeText={setNewCapacity}
-                />
-              </View>
-
-              <TouchableOpacity 
-                style={[styles.confirmBtn, createVehicle.isPending && { opacity: 0.8 }]}
-                onPress={handleCreate}
-                disabled={createVehicle.isPending}
-              >
-                {createVehicle.isPending ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.confirmBtnText}>ADD TO FLEET</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+      <SwipeableBottomSheet visible={modalVisible} onClose={() => setModalVisible(false)}>
+        <View style={{ paddingHorizontal: 24 }}>
+          <Text style={styles.modalTitle}>Register Vehicle</Text>
+          <Text style={styles.modalSubtitle}>Add new asset to the fleet</Text>
+          
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>VEHICLE NUMBER</Text>
+            <TextInput 
+              style={styles.input}
+              placeholder="e.g. MH-01-AB-1234"
+              placeholderTextColor="#94A3B8"
+              value={newVehicleNumber}
+              onChangeText={setNewVehicleNumber}
+            />
           </View>
+
+          <View style={[styles.inputGroup, { marginTop: 20 }]}>
+            <Text style={styles.inputLabel}>CAPACITY (UNITS)</Text>
+            <TextInput 
+              style={styles.input}
+              placeholder="100"
+              placeholderTextColor="#94A3B8"
+              keyboardType="numeric"
+              value={newCapacity}
+              onChangeText={setNewCapacity}
+            />
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.confirmBtn, createVehicle.isPending && { opacity: 0.8 }]}
+            onPress={handleCreate}
+            disabled={createVehicle.isPending}
+          >
+            {createVehicle.isPending ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.confirmBtnText}>ADD TO FLEET</Text>
+            )}
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </SwipeableBottomSheet>
 
       {/* Premium Delete Confirmation */}
       <ConfirmModal

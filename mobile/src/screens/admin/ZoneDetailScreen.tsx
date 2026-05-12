@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, FlatList, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, FlatList, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSchedulesByZone, createSchedule, deleteSchedule } from '../../api/schedule.api';
@@ -10,6 +10,7 @@ import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { parseError } from '../../lib/error-parser';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { Ionicons } from '@expo/vector-icons';
+import { SwipeableBottomSheet } from '../../components/common/SwipeableBottomSheet';
 
 const { height } = Dimensions.get('window');
 
@@ -167,77 +168,65 @@ export const ZoneDetailScreen = ({ route, navigation }: any) => {
       </ScrollView>
 
       {/* Add Schedule Modal */}
-      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>New Schedule</Text>
-                <Text style={styles.modalSubtitle}>Configure collection window</Text>
-              </View>
-              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#0F172A" />
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView contentContainerStyle={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <Text style={styles.inputLabel}>WASTE CATEGORY</Text>
-              <View style={styles.categoryGrid}>
-                {categories.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    onPress={() => setWasteCategory(cat)}
-                    style={[
-                      styles.categoryPill,
-                      wasteCategory === cat && styles.activeCategoryPill
-                    ]}
-                  >
-                    <Text style={[styles.categoryPillText, wasteCategory === cat && styles.activeCategoryPillText]}>{cat}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+      <SwipeableBottomSheet visible={isModalVisible} onClose={() => setIsModalVisible(false)}>
+        <View style={styles.modalBody}>
+          <Text style={styles.modalTitle}>New Schedule</Text>
+          <Text style={styles.modalSubtitle}>Configure collection window</Text>
 
-              <Text style={[styles.inputLabel, { marginTop: 24 }]}>PICKUP DAY</Text>
-              <View style={styles.dayGrid}>
-                {days.map((day, idx) => (
-                  <TouchableOpacity
-                    key={day}
-                    onPress={() => setPickupDay(idx)}
-                    style={[
-                      styles.dayCircle,
-                      pickupDay === idx && styles.activeDayCircle
-                    ]}
-                  >
-                    <Text style={[styles.dayCircleText, pickupDay === idx && styles.activeDayCircleText]}>{day[0]}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={[styles.inputLabel, { marginTop: 24 }]}>TIME WINDOW</Text>
-              <TextInput
-                style={styles.input}
-                value={timeWindow}
-                onChangeText={setTimeWindow}
-                placeholder="e.g. 08:00 AM - 10:00 AM"
-                placeholderTextColor="#94A3B8"
-              />
-
-              <TouchableOpacity 
-                style={[styles.saveBtn, createMutation.isPending && { opacity: 0.8 }]}
-                onPress={handleAddSchedule}
-                disabled={createMutation.isPending}
+          <Text style={styles.inputLabel}>WASTE CATEGORY</Text>
+          <View style={styles.categoryGrid}>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                onPress={() => setWasteCategory(cat)}
+                style={[
+                  styles.categoryPill,
+                  wasteCategory === cat && styles.activeCategoryPill
+                ]}
               >
-                {createMutation.isPending ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.saveBtnText}>SAVE SCHEDULE</Text>
-                )}
+                <Text style={[styles.categoryPillText, wasteCategory === cat && styles.activeCategoryPillText]}>{cat}</Text>
               </TouchableOpacity>
-              <View style={{ height: 40 }} />
-            </ScrollView>
+            ))}
           </View>
+
+          <Text style={[styles.inputLabel, { marginTop: 24 }]}>PICKUP DAY</Text>
+          <View style={styles.dayGrid}>
+            {days.map((day, idx) => (
+              <TouchableOpacity
+                key={day}
+                onPress={() => setPickupDay(idx)}
+                style={[
+                  styles.dayCircle,
+                  pickupDay === idx && styles.activeDayCircle
+                ]}
+              >
+                <Text style={[styles.dayCircleText, pickupDay === idx && styles.activeDayCircleText]}>{day[0]}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={[styles.inputLabel, { marginTop: 24 }]}>TIME WINDOW</Text>
+          <TextInput
+            style={styles.input}
+            value={timeWindow}
+            onChangeText={setTimeWindow}
+            placeholder="e.g. 08:00 AM - 10:00 AM"
+            placeholderTextColor="#94A3B8"
+          />
+
+          <TouchableOpacity 
+            style={[styles.saveBtn, createMutation.isPending && { opacity: 0.8 }]}
+            onPress={handleAddSchedule}
+            disabled={createMutation.isPending}
+          >
+            {createMutation.isPending ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.saveBtnText}>SAVE SCHEDULE</Text>
+            )}
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </SwipeableBottomSheet>
 
       {/* Premium Delete Confirmation */}
       <ConfirmModal

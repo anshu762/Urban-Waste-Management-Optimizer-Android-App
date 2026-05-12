@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, ActivityIndicator, StyleSheet, Dimensions, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, StyleSheet, Dimensions, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getZonesApi } from '../../api/zone.api';
@@ -10,6 +10,7 @@ import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { parseError } from '../../lib/error-parser';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { Ionicons } from '@expo/vector-icons';
+import { SwipeableBottomSheet } from '../../components/common/SwipeableBottomSheet';
 
 const { width, height } = Dimensions.get('window');
 
@@ -158,69 +159,57 @@ export const ZoneManagementScreen = ({ navigation }: any) => {
       )}
 
       {/* Premium Create Zone Modal */}
-      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>New Jurisdiction</Text>
-                <Text style={styles.modalSubtitle}>Define a new service area</Text>
-              </View>
-              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#0F172A" />
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView contentContainerStyle={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>ZONE NAME</Text>
-                <TextInput
-                  style={styles.input}
-                  value={zoneName}
-                  onChangeText={setZoneName}
-                  placeholder="e.g. Sector 15"
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
+      <SwipeableBottomSheet visible={isModalVisible} onClose={() => setIsModalVisible(false)}>
+        <View style={styles.modalBody}>
+          <Text style={styles.modalTitle}>New Jurisdiction</Text>
+          <Text style={styles.modalSubtitle}>Define a new service area</Text>
 
-              <View style={[styles.inputGroup, { marginTop: 20 }]}>
-                <Text style={styles.inputLabel}>CITY</Text>
-                <TextInput
-                  style={styles.input}
-                  value={city}
-                  onChangeText={setCity}
-                  placeholder="e.g. New Delhi"
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
-
-              <View style={[styles.inputGroup, { marginTop: 20 }]}>
-                <Text style={styles.inputLabel}>AREA CODE (OPTIONAL)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={areaCode}
-                  onChangeText={setAreaCode}
-                  placeholder="e.g. 110001"
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
-
-              <TouchableOpacity 
-                style={[styles.createBtn, createZoneMutation.isPending && { opacity: 0.8 }]}
-                onPress={handleCreateZone}
-                disabled={createZoneMutation.isPending}
-              >
-                {createZoneMutation.isPending ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.createBtnText}>ESTABLISH ZONE</Text>
-                )}
-              </TouchableOpacity>
-              <View style={{ height: 40 }} />
-            </ScrollView>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>ZONE NAME</Text>
+            <TextInput
+              style={styles.input}
+              value={zoneName}
+              onChangeText={setZoneName}
+              placeholder="e.g. Sector 15"
+              placeholderTextColor="#94A3B8"
+            />
           </View>
+
+          <View style={[styles.inputGroup, { marginTop: 20 }]}>
+            <Text style={styles.inputLabel}>CITY</Text>
+            <TextInput
+              style={styles.input}
+              value={city}
+              onChangeText={setCity}
+              placeholder="e.g. New Delhi"
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
+
+          <View style={[styles.inputGroup, { marginTop: 20 }]}>
+            <Text style={styles.inputLabel}>AREA CODE (OPTIONAL)</Text>
+            <TextInput
+              style={styles.input}
+              value={areaCode}
+              onChangeText={setAreaCode}
+              placeholder="e.g. 110001"
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.createBtn, createZoneMutation.isPending && { opacity: 0.8 }]}
+            onPress={handleCreateZone}
+            disabled={createZoneMutation.isPending}
+          >
+            {createZoneMutation.isPending ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.createBtnText}>ESTABLISH ZONE</Text>
+            )}
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </SwipeableBottomSheet>
 
       {/* Premium Delete Confirmation */}
       <ConfirmModal

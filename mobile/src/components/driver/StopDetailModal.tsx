@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
-  View, Text, Modal, TouchableOpacity, StyleSheet, Dimensions, ScrollView,
+  View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SwipeableBottomSheet } from '../common/SwipeableBottomSheet';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -81,144 +82,135 @@ export const StopDetailModal: React.FC<StopDetailModalProps> = ({
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.handleBar}>
-            <View style={styles.handle} />
+    <SwipeableBottomSheet visible={visible} onClose={onClose}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <View style={styles.statusRow}>
+          <View
+            style={[
+              styles.stopStatusPill,
+              {
+                backgroundColor:
+                  stop.stopStatus === 'COMPLETED'
+                    ? '#ECFDF5'
+                    : stop.stopStatus === 'SKIPPED'
+                      ? '#FEF2F2'
+                      : stop.stopStatus === 'DELAYED'
+                        ? '#FFFBEB'
+                        : '#F8FAFC',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.stopStatusText,
+                {
+                  color:
+                    stop.stopStatus === 'COMPLETED'
+                      ? '#059669'
+                      : stop.stopStatus === 'SKIPPED'
+                        ? '#DC2626'
+                        : stop.stopStatus === 'DELAYED'
+                          ? '#D97706'
+                          : '#64748B',
+                },
+              ]}
+            >
+              {stop.stopStatus || 'PENDING'}
+            </Text>
           </View>
-
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-            <View style={styles.statusRow}>
-              <View
-                style={[
-                  styles.stopStatusPill,
-                  {
-                    backgroundColor:
-                      stop.stopStatus === 'COMPLETED'
-                        ? '#ECFDF5'
-                        : stop.stopStatus === 'SKIPPED'
-                          ? '#FEF2F2'
-                          : stop.stopStatus === 'DELAYED'
-                            ? '#FFFBEB'
-                            : '#F8FAFC',
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.stopStatusText,
-                    {
-                      color:
-                        stop.stopStatus === 'COMPLETED'
-                          ? '#059669'
-                          : stop.stopStatus === 'SKIPPED'
-                            ? '#DC2626'
-                            : stop.stopStatus === 'DELAYED'
-                              ? '#D97706'
-                              : '#64748B',
-                    },
-                  ]}
-                >
-                  {stop.stopStatus || 'PENDING'}
-                </Text>
-              </View>
-              <Text style={styles.stopOrder}>Stop #{stop.stopOrder}</Text>
-            </View>
-
-            <Text style={styles.residentName}>{resident?.user?.fullName || 'Unknown'}</Text>
-
-            <View style={styles.infoRow}>
-              <Ionicons name="location-outline" size={16} color="#64748B" />
-              <Text style={styles.infoText}>{address || 'No address'}</Text>
-            </View>
-
-            {resident?.landmark ? (
-              <View style={styles.infoRow}>
-                <Ionicons name="flag-outline" size={16} color="#64748B" />
-                <Text style={styles.infoText}>{resident.landmark}</Text>
-              </View>
-            ) : null}
-
-            <View style={styles.infoRow}>
-              <Ionicons name="trending-up-outline" size={16} color="#64748B" />
-              <Text style={styles.infoText}>
-                Priority Score: <Text style={styles.prioHighlight}>{stop.priorityScore}</Text>
-              </Text>
-            </View>
-
-            {stop.issueNote ? (
-              <View style={styles.issueCard}>
-                <Text style={styles.issueLabel}>ISSUE NOTE</Text>
-                <Text style={styles.issueText}>{stop.issueNote}</Text>
-              </View>
-            ) : null}
-
-            <View style={styles.divider} />
-
-            {action === 'skip' ? (
-              <>
-                {backButton(() => setAction(null))}
-                <Text style={styles.actionSectionLabel}>WHY SKIP?</Text>
-                {skipOptions.map((opt) => (
-                  <TouchableOpacity
-                    key={opt.label}
-                    style={styles.optionBtn}
-                    onPress={() => onSkip(stop.id, opt.note)}
-                  >
-                    <Ionicons name="arrow-forward-circle" size={20} color="#DC2626" />
-                    <Text style={styles.optionLabel}>{opt.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </>
-            ) : action === 'report' ? (
-              <>
-                {backButton(() => setAction(null))}
-                <Text style={styles.actionSectionLabel}>WHAT ISSUE?</Text>
-                {reportOptions.map((opt) => (
-                  <TouchableOpacity
-                    key={opt.label}
-                    style={styles.optionBtn}
-                    onPress={() => onReportIssue(stop.id, opt.note)}
-                  >
-                    <Ionicons name="alert-circle" size={20} color="#D97706" />
-                    <Text style={styles.optionLabel}>{opt.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </>
-            ) : (
-              <>
-                <Text style={styles.actionSectionLabel}>ACTIONS</Text>
-                <View style={styles.actionsGrid}>
-                  <ActionButton
-                    icon="checkmark-circle"
-                    label="Complete"
-                    color="#059669"
-                    bg="#ECFDF5"
-                    onPress={() => onMarkCompleted(stop.id)}
-                  />
-                  <ActionButton
-                    icon="arrow-forward-circle"
-                    label="Skip"
-                    color="#DC2626"
-                    bg="#FEF2F2"
-                    onPress={() => setAction('skip')}
-                  />
-                  <ActionButton
-                    icon="alert-circle"
-                    label="Report Issue"
-                    color="#D97706"
-                    bg="#FFFBEB"
-                    onPress={() => setAction('report')}
-                  />
-                </View>
-              </>
-            )}
-          </ScrollView>
+          <Text style={styles.stopOrder}>Stop #{stop.stopOrder}</Text>
         </View>
-      </View>
-    </Modal>
+
+        <Text style={styles.residentName}>{resident?.user?.fullName || 'Unknown'}</Text>
+
+        <View style={styles.infoRow}>
+          <Ionicons name="location-outline" size={16} color="#64748B" />
+          <Text style={styles.infoText}>{address || 'No address'}</Text>
+        </View>
+
+        {resident?.landmark ? (
+          <View style={styles.infoRow}>
+            <Ionicons name="flag-outline" size={16} color="#64748B" />
+            <Text style={styles.infoText}>{resident.landmark}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.infoRow}>
+          <Ionicons name="trending-up-outline" size={16} color="#64748B" />
+          <Text style={styles.infoText}>
+            Priority Score: <Text style={styles.prioHighlight}>{stop.priorityScore}</Text>
+          </Text>
+        </View>
+
+        {stop.issueNote ? (
+          <View style={styles.issueCard}>
+            <Text style={styles.issueLabel}>ISSUE NOTE</Text>
+            <Text style={styles.issueText}>{stop.issueNote}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.divider} />
+
+        {action === 'skip' ? (
+          <>
+            {backButton(() => setAction(null))}
+            <Text style={styles.actionSectionLabel}>WHY SKIP?</Text>
+            {skipOptions.map((opt) => (
+              <TouchableOpacity
+                key={opt.label}
+                style={styles.optionBtn}
+                onPress={() => onSkip(stop.id, opt.note)}
+              >
+                <Ionicons name="arrow-forward-circle" size={20} color="#DC2626" />
+                <Text style={styles.optionLabel}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        ) : action === 'report' ? (
+          <>
+            {backButton(() => setAction(null))}
+            <Text style={styles.actionSectionLabel}>WHAT ISSUE?</Text>
+            {reportOptions.map((opt) => (
+              <TouchableOpacity
+                key={opt.label}
+                style={styles.optionBtn}
+                onPress={() => onReportIssue(stop.id, opt.note)}
+              >
+                <Ionicons name="alert-circle" size={20} color="#D97706" />
+                <Text style={styles.optionLabel}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        ) : (
+          <>
+            <Text style={styles.actionSectionLabel}>ACTIONS</Text>
+            <View style={styles.actionsGrid}>
+              <ActionButton
+                icon="checkmark-circle"
+                label="Complete"
+                color="#059669"
+                bg="#ECFDF5"
+                onPress={() => onMarkCompleted(stop.id)}
+              />
+              <ActionButton
+                icon="arrow-forward-circle"
+                label="Skip"
+                color="#DC2626"
+                bg="#FEF2F2"
+                onPress={() => setAction('skip')}
+              />
+              <ActionButton
+                icon="alert-circle"
+                label="Report Issue"
+                color="#D97706"
+                bg="#FFFBEB"
+                onPress={() => setAction('report')}
+              />
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </SwipeableBottomSheet>
   );
 };
 
