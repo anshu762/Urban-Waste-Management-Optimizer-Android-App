@@ -9,7 +9,6 @@ import { tokens } from '../../theme/tokens';
 
 export const ProfileScreen = ({ navigation }: any) => {
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({
     buildingName: user?.residentProfile?.buildingName || '',
@@ -93,12 +92,6 @@ export const ProfileScreen = ({ navigation }: any) => {
           <Ionicons name="settings-outline" size={18} color="#0F172A" />
           <Text style={styles.editProfileText}>Edit Profile Details</Text>
           <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
-        </TouchableOpacity>
-
-        {/* Logout */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.8}>
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -319,23 +312,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#0F172A',
-  },
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    gap: 8,
-    marginTop: 8,
-  },
-  logoutText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#EF4444',
   },
   modalOverlay: {
     flex: 1,
