@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +6,24 @@ import { updateProfileApi } from '../../api/user.api';
 import { getZonesApi } from '../../api/zone.api';
 import { useAuthStore } from '../../stores/auth.store';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+
+const FormField = memo(({ label, icon, value, onChangeText, placeholder }: any) => (
+  <View style={styles.fieldGroup}>
+    <Text style={styles.fieldLabel}>{label}</Text>
+    <View style={styles.fieldRow}>
+      <View style={styles.fieldIconBox}>
+        <Ionicons name={icon} size={16} color="#64748B" />
+      </View>
+      <TextInput
+        style={styles.fieldInput}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#CBD5E1"
+      />
+    </View>
+  </View>
+));
 
 export const AddressSetupScreen = ({ navigation }: any) => {
   const [zones, setZones] = useState<any[]>([]);
@@ -40,6 +58,14 @@ export const AddressSetupScreen = ({ navigation }: any) => {
     }
   };
 
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.reset({ index: 0, routes: [{ name: 'ResidentTabs' }] });
+    }
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
@@ -68,6 +94,12 @@ export const AddressSetupScreen = ({ navigation }: any) => {
 
         await useAuthStore.getState().completeOnboarding();
         showSuccess('Address updated successfully');
+
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+        } else {
+          navigation.reset({ index: 0, routes: [{ name: 'ResidentTabs' }] });
+        }
       }
     } catch (error) {
       showError(error);
@@ -76,28 +108,10 @@ export const AddressSetupScreen = ({ navigation }: any) => {
     }
   };
 
-  const FormField = ({ label, icon, value, onChangeText, placeholder }: any) => (
-    <View style={styles.fieldGroup}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <View style={styles.fieldRow}>
-        <View style={styles.fieldIconBox}>
-          <Ionicons name={icon} size={16} color="#64748B" />
-        </View>
-        <TextInput
-          style={styles.fieldInput}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor="#CBD5E1"
-        />
-      </View>
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backBtn} onPress={handleBack}>
           <Ionicons name="arrow-back" size={20} color="#0F172A" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Service Zone</Text>
