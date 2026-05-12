@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, Alert, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { analyticsApi } from '../../../api/analytics.api';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
+import { ConfirmModal } from '../../../components/common/ConfirmModal';
 
 const { width } = Dimensions.get('window');
 
@@ -12,6 +14,7 @@ export const InactiveResidentsScreen = ({ route }: any) => {
   const { zoneId } = route.params;
   const navigation = useNavigation();
   const [sending, setSending] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['inactiveResidents', zoneId],
@@ -20,34 +23,30 @@ export const InactiveResidentsScreen = ({ route }: any) => {
 
   const handleSendReminder = async () => {
     if (!data || data.residents.length === 0) return;
-
-    Alert.alert(
-      "Send Bulk Reminder",
-      `Are you sure you want to send a push notification to ${data.residents.length} inactive residents?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Send", 
-          onPress: async () => {
-            setSending(true);
-            try {
-              const userIds = data.residents.map(r => r.userId);
-              await analyticsApi.sendBulkNotification(
-                userIds, 
-                "We miss you! 🗑️", 
-                "Hi! Don't forget to log your waste before pickup day to keep our city clean."
-              );
-              Alert.alert("Success", `Reminder sent to ${userIds.length} residents`);
-              refetch();
-            } catch (err: any) {
-              Alert.alert("Error", err.response?.data?.message || err.message || "Failed to send reminders");
-            } finally {
-              setSending(false);
-            }
-          }
-        }
-      ]
-    );
+    setSending(true);
+    setShowConfirm(false);
+    try {
+      const userIds = data.residents.map(r => r.userId);
+      await analyticsApi.sendBulkNotification(
+        userIds, 
+        "We miss you! 🗑️", 
+        "Hi! Don't forget to log your waste before pickup day to keep our city clean."
+      );
+      Toast.show({
+        type: 'success',
+        text1: 'Reminders Sent',
+        text2: `Notification sent to ${userIds.length} residents`,
+      });
+      refetch();
+    } catch (err: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to Send',
+        text2: err.response?.data?.message || err.message || 'Something went wrong',
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   const renderItem = ({ item }: { item: any }) => {
@@ -156,7 +155,7 @@ export const InactiveResidentsScreen = ({ route }: any) => {
       {data?.residents && data.residents.length > 0 && (
         <View style={styles.fabContainer}>
           <TouchableOpacity 
-            onPress={handleSendReminder}
+            onPress={() => setShowConfirm(true)}
             disabled={sending}
             style={[styles.fab, sending && { opacity: 0.8 }]}
           >
@@ -173,6 +172,18 @@ export const InactiveResidentsScreen = ({ route }: any) => {
           </TouchableOpacity>
         </View>
       )}
+
+      <ConfirmModal
+        visible={showConfirm}
+        title="Send Bulk Reminder"
+        message={`Are you sure you want to send a push notification to ${data?.residents.length || 0} inactive residents?`}
+        confirmLabel="Send"
+        cancelLabel="Cancel"
+        isDanger={false}
+        isLoading={sending}
+        onConfirm={handleSendReminder}
+        onCancel={() => setShowConfirm(false)}
+      />
     </SafeAreaView>
   );
 };
