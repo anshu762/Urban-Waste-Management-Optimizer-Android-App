@@ -134,6 +134,35 @@ export const Errors = {
       'Service is temporarily unavailable. Please try again shortly.',
       'SERVICE_UNAVAILABLE'
     ),
+  // Route Assignment
+  routeAlreadyAssigned: (driverName: string) =>
+    new AppError(
+      409,
+      `This route is already assigned to ${driverName}. Unassign them first to reassign.`,
+      'ROUTE_ALREADY_ASSIGNED'
+    ),
+
+  driverAlreadyBusy: (driverName: string, routeId: string, dateStr: string) =>
+    new AppError(
+      409,
+      `${driverName} is already assigned to Route ${routeId} on ${dateStr}. Complete or unassign that route first.`,
+      'DRIVER_ALREADY_BUSY'
+    ),
+
+  vehicleAlreadyBusy: (vehicleNumber: string, routeId: string, dateStr: string) =>
+    new AppError(
+      409,
+      `Vehicle ${vehicleNumber} is already assigned to Route ${routeId} on ${dateStr}. Unassign it from that route first.`,
+      'VEHICLE_ALREADY_BUSY'
+    ),
+
+  assignedRoutesExist: (count: number) =>
+    new AppError(
+      409,
+      `Cannot optimize — ${count} route(s) are already assigned. Unassign them first before regenerating.`,
+      'ASSIGNED_ROUTES_EXIST'
+    ),
+
   // Empty States
   noRouteData: () =>
     new AppError(

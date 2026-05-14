@@ -2,13 +2,19 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
+const FALLBACK_API_URL = 'https://urban-waste-management-optimizer-android-app-production.up.railway.app/api/v1';
+
 const getBaseUrl = () => {
-  // Production builds use the URL from app.json extra.apiUrl
+  // Production builds: use URL from app.json extra.apiUrl
   const prodUrl = Constants.expoConfig?.extra?.apiUrl as string | undefined;
   if (prodUrl && !__DEV__) return prodUrl;
 
-  // Development: use deployed backend
-  return 'https://urban-waste-management-optimizer-android-app-production.up.railway.app/api/v1';
+  // Development: read from .env (EXPO_PUBLIC_API_URL), fallback to Railway
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+
+  return FALLBACK_API_URL;
 };
 
 export const API_URL = getBaseUrl();

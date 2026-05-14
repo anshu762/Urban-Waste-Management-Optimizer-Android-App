@@ -258,6 +258,76 @@ export class RouteRepository {
     });
   }
 
+  async getRoutePlanForAssignCheck(id: string) {
+    return prisma.routePlan.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        driverProfileId: true,
+        vehicleId: true,
+        routeDate: true,
+        status: true,
+        driverProfile: {
+          select: {
+            userId: true,
+            user: { select: { fullName: true } },
+          },
+        },
+      },
+    });
+  }
+
+  async findActiveRoutePlanByDriverAndDate(driverProfileId: string, date: Date, excludeRoutePlanId?: string) {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return prisma.routePlan.findFirst({
+      where: {
+        driverProfileId,
+        id: excludeRoutePlanId ? { not: excludeRoutePlanId } : undefined,
+        routeDate: { gte: startOfDay, lte: endOfDay },
+        status: { in: [RouteStatus.ASSIGNED, RouteStatus.IN_PROGRESS] },
+      },
+      select: { id: true },
+    });
+  }
+
+  async findActiveRoutePlanByVehicleAndDate(vehicleId: string, date: Date, excludeRoutePlanId?: string) {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return prisma.routePlan.findFirst({
+      where: {
+        vehicleId,
+        id: excludeRoutePlanId ? { not: excludeRoutePlanId } : undefined,
+        routeDate: { gte: startOfDay, lte: endOfDay },
+        status: { in: [RouteStatus.ASSIGNED, RouteStatus.IN_PROGRESS] },
+      },
+      select: { id: true },
+    });
+  }
+
+  async findAssignedRoutePlansByZoneAndDate(zoneId: string, date: Date) {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return prisma.routePlan.findMany({
+      where: {
+        zoneId,
+        routeDate: { gte: startOfDay, lte: endOfDay },
+        driverProfileId: { not: null },
+        status: { in: [RouteStatus.ASSIGNED, RouteStatus.IN_PROGRESS] },
+      },
+      select: { id: true },
+    });
+  }
+
   async assignRouteToDriver(routePlanId: string, driverProfileId: string, vehicleId: string) {
     return prisma.routePlan.update({
       where: { id: routePlanId },
@@ -268,7 +338,9 @@ export class RouteRepository {
       },
       include: {
         zone: true,
-        driverProfile: true,
+        driverProfile: {
+          include: { user: { select: { fullName: true, userId: true } } },
+        },
         vehicle: true,
       },
     });
