@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -143,41 +143,10 @@ const TabItem = React.memo(({ route, index, isFocused, onPress, onLongPress }: {
 
 export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const insets = useSafeAreaInsets();
-  const indicatorAnim = useRef(new Animated.Value(0)).current;
-  const tabWidth = useRef(0);
-
-  const onTabLayout = useCallback((e: any) => {
-    tabWidth.current = e.nativeEvent.layout.width;
-    const targetX = (tabWidth.current / state.routes.length) * state.index;
-    indicatorAnim.setValue(targetX);
-  }, []);
-
-  useEffect(() => {
-    if (tabWidth.current > 0) {
-      const targetX = (tabWidth.current / state.routes.length) * state.index;
-      Animated.spring(indicatorAnim, {
-        toValue: targetX,
-        friction: 8,
-        tension: 80,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [state.index, state.routes.length]);
-
-  const tabItemWidth = tabWidth.current > 0 ? tabWidth.current / state.routes.length : 0;
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-      <View style={styles.tabBar} onLayout={onTabLayout}>
-        <Animated.View
-          style={[
-            styles.slidingIndicator,
-            {
-              width: tabItemWidth > 0 ? tabItemWidth - 32 : 0,
-              transform: [{ translateX: indicatorAnim }],
-            },
-          ]}
-        />
+      <View style={styles.tabBar}>
         {state.routes.map((route, index) => {
           const isFocused = state.index === index;
 
@@ -226,15 +195,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 64,
     alignItems: 'center',
-  },
-  slidingIndicator: {
-    position: 'absolute',
-    top: 0,
-    left: 16,
-    height: 3,
-    borderBottomLeftRadius: 2,
-    borderBottomRightRadius: 2,
-    backgroundColor: ACTIVE_COLOR,
   },
   tabItem: {
     flex: 1,
