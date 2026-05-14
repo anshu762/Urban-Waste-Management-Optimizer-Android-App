@@ -16,6 +16,7 @@ import { ComplaintDetailScreen } from '../screens/resident/ComplaintDetailScreen
 import { WasteLogDetailScreen } from '../screens/resident/WasteLogDetailScreen';
 import { AddressSetupScreen } from '../screens/onboarding/AddressSetupScreen';
 import { ProfileScreen } from '../screens/resident/ProfileScreen';
+import { SmartWasteScannerScreen } from '../screens/resident/SmartWasteScannerScreen';
 
 import { CustomTabBar } from '../components/navigation/CustomTabBar';
 
@@ -46,5 +47,6 @@ export const ResidentStack = () => (
     <Stack.Screen name="ComplaintDetail" component={ComplaintDetailScreen} options={{ headerShown: false }} />
     <Stack.Screen name="WasteLogDetail" component={WasteLogDetailScreen} options={{ headerShown: false }} />
     <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="SmartWasteScanner" component={SmartWasteScannerScreen} options={{ headerShown: false }} />
   </Stack.Navigator>
 );

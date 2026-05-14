@@ -161,6 +161,27 @@ export const HomeScreen = ({ navigation }: any) => {
     </View>
   );
 
+  const renderScannerCard = () => (
+    <View style={styles.shortcutsSection}>
+      <TouchableOpacity
+        style={styles.scannerCard}
+        onPress={() => navigation.navigate('SmartWasteScanner')}
+        activeOpacity={0.85}
+      >
+        <View style={styles.scannerCardContent}>
+          <View style={[styles.shortcutIconWrap, { backgroundColor: '#ECFDF5' }]}>
+            <Ionicons name="scan" size={22} color="#10B981" />
+          </View>
+          <View style={styles.shortcutTextCol}>
+            <Text style={styles.shortcutTitle}>Smart Waste Scanner</Text>
+            <Text style={styles.shortcutSubtitle}>Identify correct dustbin instantly</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderReportShortcut = () => (
     <View style={styles.shortcutsSection}>
       <View style={styles.shortcutsGroup}>
@@ -240,6 +261,7 @@ export const HomeScreen = ({ navigation }: any) => {
         ) : (
           <>
             {renderStats()}
+            {renderScannerCard()}
             {renderReportShortcut()}
 
             <Text style={styles.sectionTitle}>Schedule</Text>
@@ -483,6 +505,20 @@ const styles = StyleSheet.create({
     borderColor: '#F1F5F9',
     backgroundColor: '#FAFBFC',
     overflow: 'hidden',
+  },
+  scannerCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
+    backgroundColor: '#FAFBFC',
+    overflow: 'hidden',
+  },
+  scannerCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    backgroundColor: '#FFFFFF',
   },
   shortcutRow: {
     flexDirection: 'row',
