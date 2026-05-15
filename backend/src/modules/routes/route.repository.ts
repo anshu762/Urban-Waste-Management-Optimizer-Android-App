@@ -105,7 +105,6 @@ export class RouteRepository {
 
   /**
    * Returns ALL route plans for a given zone on a given date.
-   * Used to check for duplicates before generating a new plan.
    */
   async findAllRoutePlansByZoneAndDate(zoneId: string, date: Date) {
     const startOfDay = new Date(date);
@@ -118,8 +117,38 @@ export class RouteRepository {
         zoneId,
         routeDate: { gte: startOfDay, lte: endOfDay },
       },
-      select: { id: true },
+      select: { id: true, status: true },
     });
+  }
+
+  async getStopsByRoutePlanIds(routePlanIds: string[]) {
+    return prisma.routeStop.findMany({
+      where: { routePlanId: { in: routePlanIds } },
+      select: { residentProfileId: true, routePlanId: true },
+    });
+  }
+
+  async appendStopsToPlan(planId: string, stops: { residentProfileId: string; stopOrder: number; priorityScore: number }[]) {
+    await prisma.routeStop.createMany({
+      data: stops.map(stop => ({
+        routePlanId: planId,
+        residentProfileId: stop.residentProfileId,
+        stopOrder: stop.stopOrder,
+        priorityScore: stop.priorityScore,
+        stopStatus: StopStatus.PENDING,
+      })),
+    });
+    const plan = await prisma.routePlan.update({
+      where: { id: planId },
+      data: { totalEstimatedStops: { increment: stops.length } },
+      include: {
+        zone: { select: { zoneName: true } },
+        driverProfile: {
+          include: { user: { select: { id: true } } },
+        },
+      },
+    });
+    return plan;
   }
 
   /**
@@ -240,6 +269,13 @@ export class RouteRepository {
     });
   }
 
+  async getRoutePlanStopSummary(routePlanId: string) {
+    return prisma.routeStop.findMany({
+      where: { routePlanId },
+      select: { stopStatus: true },
+    });
+  }
+
   async updateRoutePlanStatus(id: string, status: RouteStatus) {
     return prisma.routePlan.update({
       where: { id },
@@ -339,10 +375,10 @@ export class RouteRepository {
       include: {
         zone: true,
         driverProfile: {
-          include: { user: { select: { fullName: true, userId: true } } },
+          include: { user: { select: { fullName: true, id: true } } },
         },
         vehicle: true,
       },
-    });
+    }) as any;
   }
 }

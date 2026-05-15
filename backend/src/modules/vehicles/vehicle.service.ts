@@ -14,8 +14,8 @@ export class VehicleService {
     return this.vehicleRepository.createVehicle(data);
   }
 
-  async listVehicles(includeInactive = false) {
-    return this.vehicleRepository.getAllVehicles(includeInactive);
+  async listVehicles(includeInactive = false, zoneId?: string) {
+    return this.vehicleRepository.getAllVehicles(includeInactive, zoneId);
   }
 
   async getVehicle(id: string) {

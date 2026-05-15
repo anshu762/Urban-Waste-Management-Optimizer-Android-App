@@ -36,6 +36,7 @@ const DriverHomeScreen = ({ navigation }: any) => {
   const plan = routeData?.data?.[0] || null;
   const stops = plan?.routeStops || [];
   const completedStops = stops.filter((s: any) => s.stopStatus === 'COMPLETED').length;
+  const pendingStops = stops.filter((s: any) => s.stopStatus === 'PENDING').length;
   const totalStops = stops.length;
 
   const handleStartRoute = () => {
@@ -211,16 +212,18 @@ const DriverHomeScreen = ({ navigation }: any) => {
 
               {plan.status === 'IN_PROGRESS' && (
                 <TouchableOpacity
-                  style={styles.completeRouteBtn}
+                  style={[styles.completeRouteBtn, pendingStops > 0 && styles.completeRouteBtnDisabled]}
                   onPress={handleCompleteRoute}
-                  disabled={markComplete.isPending}
+                  disabled={markComplete.isPending || pendingStops > 0}
                 >
                   {markComplete.isPending ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
                     <>
-                      <Ionicons name="checkmark-done" size={18} color="#FFFFFF" />
-                      <Text style={styles.startRouteText}>Complete Route</Text>
+                      <Ionicons name="checkmark-done" size={18} color={pendingStops > 0 ? '#94A3B8' : '#FFFFFF'} />
+                      <Text style={[styles.startRouteText, pendingStops > 0 && { color: '#94A3B8' }]}>
+                        {pendingStops > 0 ? `${pendingStops} Stop(s) Remaining` : 'Complete Route'}
+                      </Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -499,6 +502,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#10B981',
     gap: 8,
+  },
+  completeRouteBtnDisabled: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
   },
   completedBanner: {
     flexDirection: 'row',

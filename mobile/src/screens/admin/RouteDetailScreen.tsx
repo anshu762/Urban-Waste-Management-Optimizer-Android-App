@@ -19,12 +19,15 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
   const { routeId } = route.params;
   const { showError, showSuccess } = useErrorHandler();
   const { data: planData, isLoading, isError, error, refetch } = useRoutePlanById(routeId);
-  const { data: vehiclesData, isError: vehiclesError, error: vehiclesErr, refetch: refetchVehicles } = useVehicles();
+  const plan = planData?.data;
+  const zoneId = plan?.zoneId;
+  const { data: vehiclesData, isError: vehiclesError, error: vehiclesErr, refetch: refetchVehicles } = useVehicles(false, zoneId);
   const assignRoute = useAssignRoute();
 
   const { data: driversData, isLoading: driversLoading, isError: driversError, error: driversErr, refetch: refetchDrivers } = useQuery({
-    queryKey: ['drivers'],
-    queryFn: getDriversApi,
+    queryKey: ['drivers', zoneId],
+    queryFn: () => getDriversApi(zoneId),
+    enabled: !!zoneId,
   });
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -44,7 +47,6 @@ const RouteDetailScreen = ({ route, navigation }: any) => {
     return <FullScreenError error={parseError(error)} onRetry={refetch} />;
   }
 
-  const plan = planData?.data;
   const drivers = driversData?.data || [];
   const vehicles = vehiclesData?.data || [];
 

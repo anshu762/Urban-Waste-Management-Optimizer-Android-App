@@ -21,7 +21,8 @@ export const updateProfile = async (req: Request, res: Response, next: any) => {
 
 export const getDrivers = async (req: Request, res: Response, next: any) => {
   try {
-    const result = await userService.listDrivers();
+    const zoneId = req.query.zone_id as string | undefined;
+    const result = await userService.listDrivers(zoneId);
     successResponse(res, result, 'Drivers fetched successfully');
   } catch (error: any) {
     next(error);

@@ -19,8 +19,8 @@ export class VehicleController {
 
   getVehicles = async (req: Request, res: Response) => {
     try {
-      const { include_inactive } = req.query;
-      const vehicles = await this.vehicleService.listVehicles(include_inactive === 'true');
+      const { include_inactive, zone_id } = req.query;
+      const vehicles = await this.vehicleService.listVehicles(include_inactive === 'true', zone_id as string | undefined);
       res.status(200).json({ success: true, data: vehicles });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });

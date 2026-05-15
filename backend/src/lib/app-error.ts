@@ -163,6 +163,13 @@ export const Errors = {
       'ASSIGNED_ROUTES_EXIST'
     ),
 
+  routeHasPendingStops: (count: number) =>
+    new AppError(
+      400,
+      `${count} stop(s) are still PENDING. Complete or skip them before completing the route.`,
+      'ROUTE_HAS_PENDING_STOPS'
+    ),
+
   // Empty States
   noRouteData: () =>
     new AppError(

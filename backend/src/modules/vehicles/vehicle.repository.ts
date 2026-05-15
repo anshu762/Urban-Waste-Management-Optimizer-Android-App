@@ -9,9 +9,16 @@ export class VehicleRepository {
     });
   }
 
-  async getAllVehicles(includeInactive = false) {
+  async getAllVehicles(includeInactive = false, zoneId?: string) {
+    const where: any = includeInactive ? {} : { isActive: true };
+    if (zoneId) {
+      where.OR = [
+        { routePlans: { some: { zoneId } } },
+        { routePlans: { none: {} } },
+      ];
+    }
     return prisma.vehicle.findMany({
-      where: includeInactive ? {} : { isActive: true },
+      where,
       orderBy: { createdAt: 'desc' },
     });
   }

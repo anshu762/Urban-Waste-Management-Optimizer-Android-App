@@ -19,8 +19,16 @@ export class UserService {
     return updated;
   }
 
-  async listDrivers() {
+  async listDrivers(zoneId?: string) {
+    const where: any = {};
+    if (zoneId) {
+      where.OR = [
+        { routePlans: { some: { zoneId } } },
+        { routePlans: { none: {} } },
+      ];
+    }
     return prisma.driverProfile.findMany({
+      where,
       include: {
         user: {
           select: {

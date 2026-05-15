@@ -5,8 +5,8 @@ export const updateProfileApi = async (data: any) => {
   return response.data;
 };
 
-export const getDriversApi = async () => {
-  const response = await apiClient.get('/admin/drivers');
+export const getDriversApi = async (zoneId?: string) => {
+  const response = await apiClient.get('/admin/drivers', { params: { zone_id: zoneId } });
   return response.data;
 };
 

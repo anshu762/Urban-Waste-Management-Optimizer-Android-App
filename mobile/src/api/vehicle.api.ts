@@ -1,7 +1,7 @@
 import { apiClient } from '../config/api.config';
 
-export const getVehiclesApi = async (include_inactive = false) => {
-  const response = await apiClient.get('/admin/vehicles', { params: { include_inactive } });
+export const getVehiclesApi = async (include_inactive = false, zoneId?: string) => {
+  const response = await apiClient.get('/admin/vehicles', { params: { include_inactive, zone_id: zoneId } });
   return response.data;
 };
 

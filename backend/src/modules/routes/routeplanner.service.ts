@@ -13,43 +13,89 @@ export class RoutePlannerService {
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
-  /**
-   * Generates a RoutePlan for a given zone and date based on active waste logs and open complaints.
-   * Will NOT delete any plan that is already assigned to a driver.
-   */
-  async generateRoutePlan(zoneId: string, date: Date = new Date()) {
-    const households = await this.routeRepository.getReadyHouseholdsByZone(zoneId, date);
-
-    if (households.length === 0) {
-      throw Errors.noRouteData();
-    }
-
-    // Safety check: do not delete assigned routes
-    const assignedPlans = await this.routeRepository.findAssignedRoutePlansByZoneAndDate(zoneId, date);
-    if (assignedPlans.length > 0) {
-      throw Errors.assignedRoutesExist(assignedPlans.length);
-    }
-
-    // Only delete unassigned / draft plans
-    const existingPlans = await this.routeRepository.findAllRoutePlansByZoneAndDate(zoneId, date);
-    if (existingPlans.length > 0) {
-      const ids = existingPlans.map((p: { id: string }) => p.id);
-      await this.routeRepository.deleteRoutePlansWithStops(ids);
-    }
-
+  private sortHouseholds(households: any[]) {
     households.sort((a, b) => {
-      if (b.priorityScore !== a.priorityScore) {
-        return b.priorityScore - a.priorityScore;
-      }
+      if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
       const blockA = a.block || '';
       const blockB = b.block || '';
-      if (blockA !== blockB) {
-        return blockA.localeCompare(blockB);
-      }
+      if (blockA !== blockB) return blockA.localeCompare(blockB);
       const streetA = a.street || '';
       const streetB = b.street || '';
       return streetA.localeCompare(streetB);
     });
+  }
+
+  /**
+   * Generates route plan(s) for a zone+date.
+   * - If ASSIGNED/IN_PROGRESS routes exist → auto-appends new stops (does not delete anything)
+   * - If only DRAFT routes exist → deletes and creates fresh
+   * - If no routes exist → creates fresh DRAFT
+   */
+  async generateRoutePlan(zoneId: string, date: Date = new Date()) {
+    const households = await this.routeRepository.getReadyHouseholdsByZone(zoneId, date);
+    if (households.length === 0) throw Errors.noRouteData();
+
+    const existingPlans = await this.routeRepository.findAllRoutePlansByZoneAndDate(zoneId, date);
+
+    const assignedPlanIds: string[] = [];
+    const draftPlanIds: string[] = [];
+
+    for (const plan of existingPlans) {
+      if (plan.status === 'ASSIGNED' || plan.status === 'IN_PROGRESS') {
+        assignedPlanIds.push(plan.id);
+      } else {
+        draftPlanIds.push(plan.id);
+      }
+    }
+
+    // Delete old draft plans only — leave assigned ones untouched
+    if (draftPlanIds.length > 0) {
+      await this.routeRepository.deleteRoutePlansWithStops(draftPlanIds);
+    }
+
+    // If assigned plans exist → auto-append new stops
+    if (assignedPlanIds.length > 0) {
+      const existingStops = await this.routeRepository.getStopsByRoutePlanIds(assignedPlanIds);
+      const coveredResidentIds = [...new Set(existingStops.map(s => s.residentProfileId))];
+      const newHouseholds = households.filter(h => !coveredResidentIds.includes(h.residentProfileId));
+
+      if (newHouseholds.length === 0) {
+        return this.routeRepository.getRoutePlanById(assignedPlanIds[0]);
+      }
+
+      this.sortHouseholds(newHouseholds);
+
+      for (const planId of assignedPlanIds) {
+        const planStops = existingStops.filter(s => s.routePlanId === planId);
+        const lastOrder = planStops.length;
+
+        const stopsData = newHouseholds.map((h, index) => ({
+          residentProfileId: h.residentProfileId,
+          stopOrder: lastOrder + index + 1,
+          priorityScore: h.priorityScore,
+        }));
+
+        const updatedPlan = await this.routeRepository.appendStopsToPlan(planId, stopsData);
+
+        // Notify driver
+        const driverUserId = (updatedPlan as any).driverProfile?.user?.id;
+        const zoneName = (updatedPlan as any).zone?.zoneName;
+        if (driverUserId && zoneName) {
+          const dateStr = this.formatDate(date);
+          await notificationService.notifyUser(
+            driverUserId,
+            'New Stops Added',
+            `${stopsData.length} new stop(s) added to your route for ${zoneName} on ${dateStr}.`,
+            { routePlanId: planId, zoneId }
+          );
+        }
+      }
+
+      return this.routeRepository.getRoutePlanById(assignedPlanIds[0]);
+    }
+
+    // No assigned plans — create fresh DRAFT
+    this.sortHouseholds(households);
 
     const totalEstimatedStops = households.length;
     const totalPriorityScore = households.reduce((sum, h) => sum + h.priorityScore, 0);
@@ -146,6 +192,13 @@ export class RoutePlannerService {
   }
 
   async updateRouteStatus(routePlanId: string, status: any) {
+    if (status === 'COMPLETED') {
+      const stops = await this.routeRepository.getRoutePlanStopSummary(routePlanId);
+      const pendingCount = stops.filter((s: any) => s.stopStatus === 'PENDING').length;
+      if (pendingCount > 0) {
+        throw Errors.routeHasPendingStops(pendingCount);
+      }
+    }
     return this.routeRepository.updateRoutePlanStatus(routePlanId, status);
   }
 }
